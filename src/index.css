@@ -1,0 +1,17 @@
+/* ===== INDEX.CSS ===== */
+/* Punto único de carga de estilos (no agregar clases aquí) */
+
+/* Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Módulos */
+@import "./styles/base.css";        /* variables + base */
+@import "./styles/components.css";  /* UI: botones, cards */
+@import "./styles/utilities.css";   /* layout + helpers */
+@import "./styles/animations.css";  /* animaciones */
+@import "./styles/hero.css";        /* hero */
+
+/* Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
