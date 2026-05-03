@@ -2,16 +2,14 @@
 /* UI reutilizable: botones, cards, chips */
 
 @layer components {
-
-  /* ===== BOTONES PRINCIPALES (SHOP) ===== */
-
   .btn-shop-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0;
-    background-color: var(--w-primary);
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    background-color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-pink);
   }
 
   .btn-shop-primary:hover {
-    background-color: var(--w-primary-dark);
+    background-color: var(--w-primary);
   }
 
   .btn-shop-secondary {
@@ -23,12 +21,14 @@
 
   .btn-shop-secondary:hover {
     color: white;
-    background-color: var(--w-primary);
+    background-color: var(--w-primary-dark);
+    border-color: var(--w-primary-dark);
   }
 
   .btn-shop-whatsapp {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
     background-color: var(--w-whatsapp);
+    box-shadow: var(--w-shadow-whatsapp);
   }
 
   .btn-shop-whatsapp:hover {
@@ -36,17 +36,14 @@
   }
 
   .btn-shop-pink {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0;
-    background-color: var(--w-secondary-strong);
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    background-color: var(--w-primary);
+    box-shadow: var(--w-shadow-pink);
   }
 
   .btn-shop-pink:hover {
-    background-color: #df6aad;
+    background-color: var(--w-primary-dark);
   }
-
-
-  /* ===== FLOATING BUTTONS ===== */
-  /* Botones flotantes del sistema (CTA rápidos) */
 
   .floating-btn {
     @apply inline-flex items-center justify-center gap-2.5 rounded-[30px] px-4 py-3 text-[12px] font-bold tracking-tight text-white shadow-md transition-all duration-200 hover:-translate-y-1 hover:scale-105 active:scale-[0.94] md:px-6 md:py-3.5 md:text-[13px];
@@ -54,62 +51,69 @@
 
   .floating-btn-count {
     @apply inline-flex min-w-6 items-center justify-center rounded-full bg-white px-2 py-0.5 text-[11px] font-black shadow-sm;
-    color: var(--w-primary);
+    color: var(--w-primary-dark);
   }
 
   .floating-btn-cart {
-    background-color: var(--w-primary);
-    box-shadow: 0 14px 30px rgba(29, 130, 153, 0.28);
+    background-color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-pink);
   }
 
   .floating-btn-cart:hover {
-    background-color: var(--w-primary-dark);
+    background-color: var(--w-primary);
   }
 
   .floating-btn-catalog {
     background-color: var(--w-secondary-strong);
-    box-shadow: 0 14px 30px rgba(242, 134, 190, 0.3);
+    box-shadow: var(--w-shadow-medium);
   }
 
   .floating-btn-catalog:hover {
-    background-color: #df6aad;
+    background-color: var(--w-primary);
   }
 
   .floating-btn-whatsapp {
     background-color: var(--w-whatsapp);
-    box-shadow: 0 14px 30px rgba(37, 211, 102, 0.28);
+    box-shadow: var(--w-shadow-whatsapp);
   }
 
   .floating-btn-whatsapp:hover {
     background-color: var(--w-whatsapp-dark);
   }
 
-
-  /* ===== PRICE BADGES ===== */
-  /* Escalas de precio por volumen */
-
   .price-tier-3,
   .price-tier-12,
   .price-tier-50,
   .price-tier-100 {
-    @apply inline-flex items-center justify-center px-2.5 py-[4px] text-[12px] font-black leading-none shadow-[0_4px_10px_rgba(0,0,0,0.15)];
+    @apply inline-flex items-center justify-center px-2.5 py-[4px] text-[12px] font-black leading-none shadow-[0_4px_10px_rgba(106,90,138,0.18)];
     border-radius: 8px;
   }
 
-  .price-tier-3 { background-color: #f5b025; color: white; }
-  .price-tier-12 { background-color: #f286be; color: white; }
-  .price-tier-50 { background-color: #8b5cf6; color: white; }
-  .price-tier-100 { background-color: #020617; color: white; }
+  .price-tier-3 {
+    background-color: var(--w-highlight);
+    color: var(--w-heading);
+  }
 
+  .price-tier-12 {
+    background-color: var(--w-primary);
+    color: white;
+  }
 
-  /* ===== FILTROS ===== */
-  /* Chips de categorías */
+  .price-tier-50 {
+    background-color: var(--w-secondary);
+    color: white;
+  }
+
+  .price-tier-100 {
+    background-color: var(--w-primary-dark);
+    color: white;
+  }
 
   .filter-chip {
-    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[11px] md:text-[12px] font-semibold transition-all duration-200;
+    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[11px] font-semibold transition-all duration-200 md:text-[12px];
     background-color: white;
-    border: 1.5px solid #d8e2ed;
-    color: #475569;
+    border: 1.5px solid var(--w-border);
+    color: var(--w-muted);
     letter-spacing: -0.01em;
   }
 
@@ -119,69 +123,67 @@
     background-color: var(--w-primary-soft);
   }
 
-  /* Estado activo (UNIFICADO) */
   .filter-chip-active {
     @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-extrabold text-white shadow-lg transition-all duration-200;
-    background-color: var(--w-primary);
+    background-color: var(--w-primary-dark);
     letter-spacing: -0.01em;
   }
 
-
-  /* ===== CARDS ===== */
-  /* Contenedores principales del sistema */
-
   .card-home {
-    @apply rounded-[28px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)];
+    @apply rounded-[28px] bg-white;
     border: 1px solid var(--w-border);
+    box-shadow: var(--w-shadow-soft);
   }
 
   .card-product {
-    @apply rounded-[24px] bg-white shadow-[0_4px_10px_rgba(0,0,0,0.15)] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl;
-    border: 1px solid #dbe5ee;
+    @apply rounded-[24px] bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-xl;
+    border: 1px solid var(--w-border);
+    box-shadow: 0 8px 24px rgba(106, 90, 138, 0.10);
+  }
+
+  .card-product:hover {
+    border-color: rgba(236, 164, 194, 0.65);
+    box-shadow: var(--w-shadow-medium);
   }
 
   .card-shop {
-    @apply rounded-[26px] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)];
-    border: 1px solid #dbe5ee;
+    @apply rounded-[26px] bg-white;
+    border: 1px solid var(--w-border);
+    box-shadow: var(--w-shadow-soft);
   }
 
   .card-w {
     @apply card-home;
   }
 
-
-  /* ===== BOTONES LEGACY ===== */
-  /* Mantener por compatibilidad */
-
   .btn-w-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1 hover:shadow-lg;
-    background-color: var(--w-primary);
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1;
+    background-color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-pink);
   }
 
   .btn-w-primary:hover {
-    background-color: var(--w-primary-dark);
+    background-color: var(--w-primary);
   }
 
   .btn-w-whatsapp {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1 hover:shadow-lg;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1;
     background-color: var(--w-whatsapp);
+    box-shadow: var(--w-shadow-whatsapp);
   }
 
   .btn-w-whatsapp:hover {
     background-color: var(--w-whatsapp-dark);
   }
 
-
-  /* ===== GLASS UI ===== */
-  /* Efecto premium para home */
-
   .glass-w {
-    @apply relative overflow-hidden rounded-[30px] bg-white/85 shadow-[0_30px_90px_rgba(15,23,42,0.2)] ring-1 ring-white/30 backdrop-blur-xl;
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    @apply relative overflow-hidden rounded-[30px] bg-white/85 ring-1 ring-white/30 backdrop-blur-xl;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 30px 90px rgba(106, 90, 138, 0.18);
   }
 
   .glass-w::before {
     content: "";
-    @apply pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-transparent opacity-60;
+    @apply pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-transparent opacity-70;
   }
 }

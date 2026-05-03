@@ -1,66 +1,122 @@
 /* ===== BASE & TOKENS ===== */
-/* Variables globales + configuración base del proyecto */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
 
 @layer base {
   :root {
-    /* Colores principales */
-    --w-primary: #1d8299;
-    --w-primary-dark: #156f84;
-    --w-primary-soft: #e8f6f9;
+    --w-primary: #ECA4C2;
+    --w-primary-dark: #6A5A8A;
+    --w-primary-soft: #FDF1F6;
 
-    /* Secundarios */
-    --w-secondary: #f7b1d6;
-    --w-secondary-strong: #f286be;
-    --w-secondary-soft: #fff0f7;
+    --w-secondary: #9A8BBA;
+    --w-secondary-strong: #6A5A8A;
+    --w-secondary-soft: #F4F0FA;
 
-    /* Acentos */
-    --w-accent: #f5b025;
-    --w-accent-soft: #fff8e6;
+    --w-accent: #F6AD97;
+    --w-accent-soft: #FFF2EC;
 
-    /* Sistema */
-    --w-bg: #f8fafc;
-    --w-surface: #ffffff;
-    --w-text: #475569;
-    --w-muted: #64748b;
-    --w-border: #e2e8f0;
+    --w-highlight: #F9C95B;
+    --w-highlight-soft: #FFF7D8;
 
-    /* WhatsApp */
-    --w-whatsapp: #25d366;
-    --w-whatsapp-dark: #1ead54;
+    --w-bg: #FDFBF7;
+    --w-surface: #FFFFFF;
+    --w-surface-soft: #FFF8F3;
 
-    /* Bordes */
+    --w-text: #4B3F52;
+    --w-heading: #2F2437;
+    --w-muted: #7B6F82;
+    --w-border: #EFE3EA;
+
+    --w-whatsapp: #25D366;
+    --w-whatsapp-dark: #1EAD54;
+
     --w-radius-sm: 14px;
     --w-radius-md: 20px;
     --w-radius-lg: 28px;
+    --w-radius-xl: 36px;
+    --w-radius-full: 9999px;
 
-    /* Sombras */
-    --w-shadow-soft: 0 12px 35px rgba(15, 23, 42, 0.08);
-    --w-shadow-strong: 0 18px 50px rgba(15, 23, 42, 0.12);
+    --w-shadow-soft: 0 12px 35px rgba(106, 90, 138, 0.10);
+    --w-shadow-medium: 0 16px 42px rgba(106, 90, 138, 0.14);
+    --w-shadow-strong: 0 18px 50px rgba(106, 90, 138, 0.16);
+    --w-shadow-pink: 0 14px 34px rgba(236, 164, 194, 0.30);
+    --w-shadow-whatsapp: 0 14px 30px rgba(37, 211, 102, 0.25);
 
-    /* Tipografía */
     --font-brand: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+
+    --w-transition-fast: 0.2s ease;
+    --w-transition: 0.3s ease;
+    --w-transition-slow: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Reset base */
   *,
   *::before,
   *::after {
     box-sizing: border-box;
   }
 
-  /* Base del sitio */
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background: var(--w-bg);
+    margin: 0;
+    min-width: 320px;
+    background:
+      radial-gradient(circle at top left, rgba(236, 164, 194, 0.16), transparent 34%),
+      radial-gradient(circle at top right, rgba(154, 139, 186, 0.14), transparent 32%),
+      var(--w-bg);
     color: var(--w-text);
     font-family: var(--font-brand);
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Ajuste tipográfico */
   h1,
   h2,
-  h3 {
-    letter-spacing: -0.02em;
+  h3,
+  h4 {
+    color: var(--w-heading);
+    letter-spacing: -0.03em;
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    border: 0;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  ::selection {
+    background: var(--w-primary);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(236, 164, 194, 0.55);
+    outline-offset: 3px;
   }
 }
