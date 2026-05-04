@@ -1,23 +1,38 @@
 /* ===== BASE & TOKENS ===== */
+/* Sistema visual Gleemour
+   Core marca:
+   1. Primary   → Morado   #6A5A8A
+   2. Secondary → Rosado   #ECA4C2
+   3. Highlight → Amarillo #F9C95B
+
+   Apoyo:
+   Peach, lavanda, fondos, textos, bordes y estados.
+*/
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --w-primary: #ECA4C2;
-    --w-primary-dark: #6A5A8A;
-    --w-primary-soft: #FDF1F6;
+    /* ===== CORE DE MARCA ===== */
+    --w-primary: #6A5A8A;
+    --w-primary-dark: #4E4268;
+    --w-primary-soft: #F4F0FA;
 
-    --w-secondary: #9A8BBA;
-    --w-secondary-strong: #6A5A8A;
-    --w-secondary-soft: #F4F0FA;
-
-    --w-accent: #F6AD97;
-    --w-accent-soft: #FFF2EC;
+    --w-secondary: #ECA4C2;
+    --w-secondary-strong: #D98AAD;
+    --w-secondary-soft: #FDF1F6;
 
     --w-highlight: #F9C95B;
     --w-highlight-soft: #FFF7D8;
 
+    /* ===== COLORES DE APOYO ===== */
+    --w-accent: #F6AD97;
+    --w-accent-soft: #FFF2EC;
+
+    --w-lavender: #9A8BBA;
+    --w-lavender-soft: #F4F0FA;
+
+    /* ===== SISTEMA ===== */
     --w-bg: #FDFBF7;
     --w-surface: #FFFFFF;
     --w-surface-soft: #FFF8F3;
@@ -27,24 +42,34 @@
     --w-muted: #7B6F82;
     --w-border: #EFE3EA;
 
+    /* ===== ESTADOS / CANALES ===== */
     --w-whatsapp: #25D366;
     --w-whatsapp-dark: #1EAD54;
 
+    --w-danger: #E85D75;
+    --w-warning: #F9C95B;
+    --w-success: #25D366;
+
+    /* ===== RADIOS ===== */
     --w-radius-sm: 14px;
     --w-radius-md: 20px;
     --w-radius-lg: 28px;
     --w-radius-xl: 36px;
     --w-radius-full: 9999px;
 
+    /* ===== SOMBRAS ===== */
     --w-shadow-soft: 0 12px 35px rgba(106, 90, 138, 0.10);
     --w-shadow-medium: 0 16px 42px rgba(106, 90, 138, 0.14);
     --w-shadow-strong: 0 18px 50px rgba(106, 90, 138, 0.16);
-    --w-shadow-pink: 0 14px 34px rgba(236, 164, 194, 0.30);
+    --w-shadow-secondary: 0 14px 34px rgba(236, 164, 194, 0.30);
+    --w-shadow-highlight: 0 14px 30px rgba(249, 201, 91, 0.25);
     --w-shadow-whatsapp: 0 14px 30px rgba(37, 211, 102, 0.25);
 
+    /* ===== TIPOGRAFÍA ===== */
     --font-brand: 'Plus Jakarta Sans', 'Inter', sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
 
+    /* ===== TRANSICIONES ===== */
     --w-transition-fast: 0.2s ease;
     --w-transition: 0.3s ease;
     --w-transition-slow: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
@@ -64,8 +89,9 @@
     margin: 0;
     min-width: 320px;
     background:
-      radial-gradient(circle at top left, rgba(236, 164, 194, 0.16), transparent 34%),
-      radial-gradient(circle at top right, rgba(154, 139, 186, 0.14), transparent 32%),
+      radial-gradient(circle at top left, rgba(236, 164, 194, 0.14), transparent 34%),
+      radial-gradient(circle at top right, rgba(249, 201, 91, 0.10), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(106, 90, 138, 0.10), transparent 36%),
       var(--w-bg);
     color: var(--w-text);
     font-family: var(--font-brand);
@@ -111,7 +137,7 @@
   }
 
   ::selection {
-    background: var(--w-primary);
+    background: var(--w-secondary);
     color: #ffffff;
   }
 

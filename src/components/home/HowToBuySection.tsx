@@ -1,139 +1,110 @@
 import {
-  PackageOpen,
-  ShoppingCart,
-  FileCheck,
-  CreditCard,
-  Truck,
+  CheckCircle2,
+  Gift,
+  MessageCircle,
+  Send,
+  ShoppingBag,
 } from "lucide-react";
 import HomeSectionHeader from "./HomeSectionHeader";
+
+const WHATSAPP_URL =
+  "https://wa.me/51948122060?text=Hola%20Gleemour,%20quiero%20hacer%20un%20pedido";
 
 const steps = [
   {
     number: "1",
-    label: "Paso 1",
-    title: "Apertura tu caja",
+    title: "Elige tu detalle",
     description:
-      "Comienza tu pedido mayorista desde S/ 30. Luego entra al catálogo o escríbenos por WhatsApp y elige lo que necesitas.",
-    icon: PackageOpen,
-    color: "primary",
+      "Explora naturales, artificiales o corporativos y encuentra el ideal.",
+    icon: ShoppingBag,
   },
   {
     number: "2",
-    label: "Paso 2",
-    title: "Acumula a tu ritmo",
-    description:
-      "Agrega productos desde 3, 12 unidades o por cajón. Cuando tengas todo listo, dale en enviar pedido.",
-    icon: ShoppingCart,
-    color: "secondary",
+    title: "Escríbenos por WhatsApp",
+    description: "Confirmamos disponibilidad, precio y entrega contigo.",
+    icon: MessageCircle,
   },
   {
     number: "3",
-    label: "Paso 3",
-    title: "Recibe tu cotización",
+    title: "Nosotros lo entregamos",
     description:
-      "Te enviamos el detalle completo con precios claros para que revises y confirmes las cantidades.",
-    icon: FileCheck,
-    color: "accent",
-  },
-  {
-    number: "4",
-    label: "Paso 4",
-    title: "Confirma y paga",
-    description:
-      "Realiza tu pago por el medio que prefieras (Yape o Transferencia BCP) y comparte tus datos de envío.",
-    icon: CreditCard,
-    color: "primary",
-  },
-  {
-    number: "5",
-    label: "Paso 5",
-    title: "Enviamos a tu ciudad",
-    description:
-      "Preparamos y alistamos tu pedido, embalamos con cuidado y lo enviamos con seguro de caja por Shalom Pro.",
-    icon: Truck,
-    color: "secondary",
+      "Preparamos tu detalle y coordinamos el envío para que llegue a tiempo.",
+    icon: Send,
   },
 ];
-
-const colorStyles = {
-  primary: {
-    number: "group-hover:text-[#1d8299]/10",
-    iconHover: "group-hover:bg-[#1d8299]",
-    label: "bg-[#1d8299]/10 text-[#1d8299]",
-    title: "group-hover:text-[#1d8299]",
-  },
-  secondary: {
-    number: "group-hover:text-[#f286be]/10",
-    iconHover: "group-hover:bg-[#f286be]",
-    label: "bg-[#f286be]/10 text-[#f286be]",
-    title: "group-hover:text-[#f286be]",
-  },
-  accent: {
-    number: "group-hover:text-[#f5b025]/10",
-    iconHover: "group-hover:bg-[#f5b025]",
-    label: "bg-[#f5b025]/10 text-[#f5b025]",
-    title: "group-hover:text-[#f5b025]",
-  },
-} as const;
 
 export default function HowToBuySection() {
   return (
     <section
-      id="howtobySection"
-      className="relative w-full overflow-hidden border-t border-slate-200/60 bg-gradient-to-b from-white via-slate-50 to-slate-50 py-12 md:py-16"
+      id="como-comprar"
+      className="relative overflow-hidden border-t border-[var(--w-border)] bg-gradient-to-b from-white via-[var(--w-bg)] to-[var(--w-bg)] py-16 md:py-20"
     >
-      <div className="pointer-events-none absolute top-0 left-1/2 -z-0 h-full w-full max-w-4xl -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,rgba(29,130,153,0.06),transparent_70%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-full w-full max-w-5xl -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,rgba(236,164,194,0.12),transparent_70%)]" />
 
       <div className="home-container relative z-10">
-        <HomeSectionHeader
-          icon={ShoppingCart}
-          kicker="empieza ahora"
-          title="Compra en minutos, vende hoy"
-          description="Sigue estos 5 pasos y asegura stock listo para generar ingresos."
-        />
+        <div className="mb-12 text-center">
+          <HomeSectionHeader
+            icon={Gift}
+            kicker="Cómo comprar"
+            title="Elige lo que sientes, nosotros lo entregamos."
+            description="Convierte tu intención en un detalle listo para sorprender, en pocos pasos."
+            align="center"
+          />
 
-        <div className="relative z-10 flex flex-wrap justify-center gap-6 md:gap-8">
-          {steps.map((step) => {
-            const Icon = step.icon;
-            const styles = colorStyles[step.color as keyof typeof colorStyles];
+          <div className="mx-auto mt-7 h-1.5 w-24 rounded-full bg-gradient-to-r from-[var(--w-highlight)] via-[var(--w-secondary)] to-[var(--w-primary)]" />
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3 md:gap-6">
+          {steps.map((item) => {
+            const Icon = item.icon;
 
             return (
               <div
-                key={step.number}
-                className="group relative w-full max-w-sm overflow-hidden rounded-[30px] border border-slate-200/70 bg-white p-7 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]"
+                key={item.number}
+                className="group relative overflow-hidden rounded-[30px] border border-[var(--w-border)] bg-white/90 p-7 shadow-[var(--w-shadow-soft)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-[var(--w-secondary)] hover:shadow-[var(--w-shadow-medium)]"
               >
-                <div
-                  className={`pointer-events-none absolute -right-0 -top-4 z-0 select-none text-[130px] font-black leading-none text-slate-200/70 transition-colors duration-500 ${styles.number}`}
-                >
-                  {step.number}
+                {/* número gigante */}
+                <div className="pointer-events-none absolute -right-4 top-8 text-[120px] font-black leading-none text-slate-300/60 transition-colors duration-500 group-hover:text-slate-400/70">
+                  {item.number}
                 </div>
 
-                <div className="relative z-10 mb-6 flex items-center justify-between">
-                  <div
-                    className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7b1d6]/20 text-[#f286be] shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:text-white ${styles.iconHover}`}
-                  >
-                    <Icon className="h-7 w-7" />
+                <div className="relative z-10">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--w-secondary-soft)] text-[var(--w-primary)] shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:bg-[var(--w-secondary)] group-hover:text-white">
+                    <Icon size={30} strokeWidth={1.8} />
                   </div>
 
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${styles.label}`}
-                  >
-                    {step.label}
+                  <span className="mb-2 inline-flex rounded-full bg-[var(--w-secondary-soft)] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--w-secondary)] transition-colors duration-300 group-hover:bg-[var(--w-secondary)] group-hover:text-white">
+                    Paso {item.number}
                   </span>
+
+                  <h3 className="mb-3 text-2xl font-bold tracking-tight text-[var(--w-heading)]">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm leading-relaxed text-[var(--w-muted)]">
+                    {item.description}
+                  </p>
                 </div>
-
-                <h3
-                  className={`relative z-10 mb-3 text-xl font-bold text-slate-950 transition-colors duration-300 ${styles.title}`}
-                >
-                  {step.title}
-                </h3>
-
-                <p className="relative z-10 text-sm leading-relaxed text-slate-600">
-                  {step.description}
-                </p>
               </div>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-10 max-w-3xl rounded-[30px] border border-[var(--w-border)] bg-white/80 p-6 text-center shadow-[var(--w-shadow-soft)] backdrop-blur-xl">
+          <div className="mb-5 flex items-center justify-center gap-2 text-sm font-bold text-[var(--w-primary)]">
+            <CheckCircle2 size={18} className="text-[var(--w-highlight)]" />
+            Atención rápida, entregas coordinadas y detalles preparados con cuidado.
+          </div>
+
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-3 rounded-full bg-[var(--w-primary)] px-8 py-4 text-sm font-bold text-white shadow-[0_18px_45px_rgba(106,90,138,0.35)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--w-secondary)] active:scale-95"
+          >
+            <MessageCircle size={19} />
+            Pedir por WhatsApp ahora
+          </a>
         </div>
       </div>
     </section>
