@@ -1,7 +1,8 @@
-import type { Product } from "@/types/product";
+import { BRAND_CONFIG } from "@/config/brand";
 
-const CACHE_KEY = "wooly_products_cache";
+const CACHE_KEY = `${BRAND_CONFIG.slug}_products_cache`;
 const CACHE_DURATION = 10 * 1000; // 10 segundos
+
 interface CacheEntry {
   data: Product[];
   timestamp: number;
@@ -41,29 +42,50 @@ function setCache(data: Product[], source: CacheEntry["source"]) {
   }
 }
 
+function ensureGleemourProduct(product: Product): Product {
+  const price = product.price ?? product.price_1 ?? 0;
+
+  return {
+    ...product,
+    price,
+    price_1: product.price_1 ?? price,
+  };
+}
+
+function normalizeProducts(products: Product[]): Product[] {
+  return products.map(ensureGleemourProduct);
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   const cached = getCached();
-  if (cached) return cached;
+  if (cached) return normalizeProducts(cached);
 
   try {
     const { loadAllProducts } = await import("@/lib/sheets/fetchSheets");
-    const products = await loadAllProducts();
+    const products = normalizeProducts(await loadAllProducts());
 
     if (!products || products.length === 0) {
       console.warn("Sheets vacío o sin productos publicados. Usando fallback local.");
+
       const { FALLBACK_PRODUCTS } = await import("@/data/fallback-products");
-      setCache(FALLBACK_PRODUCTS, "fallback");
-      return FALLBACK_PRODUCTS;
+      const fallback = normalizeProducts(FALLBACK_PRODUCTS);
+
+      setCache(fallback, "fallback");
+      return fallback;
     }
 
     console.log(`Catálogo cargado desde Sheets: ${products.length} productos`);
+
     setCache(products, "sheets");
     return products;
   } catch (error) {
     console.error("Error cargando catálogo desde Sheets:", error);
+
     const { FALLBACK_PRODUCTS } = await import("@/data/fallback-products");
-    setCache(FALLBACK_PRODUCTS, "fallback");
-    return FALLBACK_PRODUCTS;
+    const fallback = normalizeProducts(FALLBACK_PRODUCTS);
+
+    setCache(fallback, "fallback");
+    return fallback;
   }
 }
 
@@ -75,28 +97,24 @@ export function clearProductsCache() {
   }
 }
 
-export function getEffectivePrice(item: {
-  price_1: number;
-  price_3: number | null;
-  price_12: number | null;
-  price_50: number | null;
-  price_100: number | null;
-  qty: number;
-}): number {
-  if (item.price_100 && item.qty >= 100) return item.price_100;
-  if (item.price_50 && item.qty >= 50) return item.price_50;
-  if (item.price_12 && item.qty >= 12) return item.price_12;
-  if (item.price_3 && item.qty >= 3) return item.price_3;
-  return item.price_1;
+export function getProductPrice(product: Product): number {
+  return product.price ?? product.price_1 ?? 0;
 }
 
-export function getMinPrice(p: Product): number {
-  return p.price_100 || p.price_50 || p.price_12 || p.price_3 || p.price_1 || 0;
+export function getEffectivePrice(item: Product & { qty: number }): number {
+  return item.price ?? item.price_1 ?? 0;
 }
 
-export function isProductAvailable(p: Product): boolean {
-  if (!p.price_1 || p.price_1 <= 0) return false;
-  if (p.stock === 0) return false;
-  if (p.stock === null || p.stock === undefined) return false;
+export function getMinPrice(product: Product): number {
+  return getProductPrice(product);
+}
+
+export function isProductAvailable(product: Product): boolean {
+  const price = getProductPrice(product);
+
+  if (!price || price <= 0) return false;
+  if (product.stock === 0) return false;
+  if (product.stock === null || product.stock === undefined) return false;
+
   return true;
 }

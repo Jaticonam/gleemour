@@ -3,16 +3,27 @@ export interface Product {
   title: string;
   description: string;
   category: string;
-  price_1: number;
-  price_3: number | null;
-  price_12: number | null;
-  price_50: number | null;
-  price_100: number | null;
+
+  // ✅ Precio principal Gleemour
+  price: number;
+
+  // ⚠️ Compatibilidad temporal con estructura heredada de Wooly
+  price_1?: number;
+  price_3?: number | null;
+  price_12?: number | null;
+  price_50?: number | null;
+  price_100?: number | null;
+
   stock: number | null;
   img: string;
   priority: number;
   status?: string;
   badges?: string[];
+
+  // ✅ Campos emocionales para Gleemour
+  occasion?: string;
+  message?: string;
+  highlight?: string;
 }
 
 export interface CartItem extends Product {
@@ -26,22 +37,14 @@ export interface Category {
   icon: string;
 }
 
-export const PRICE_TIERS = [
-  { qty: 100, key: "price_100" as const, cls: "bg-dark text-primary-foreground", label: "100u+" },
-  { qty: 50, key: "price_50" as const, cls: "bg-purple-500 text-primary-foreground", label: "50u+" },
-  { qty: 12, key: "price_12" as const, cls: "bg-secondary text-secondary-foreground", label: "12u+" },
-  { qty: 3, key: "price_3" as const, cls: "bg-tertiary text-tertiary-foreground", label: "3u+" },
-  { qty: 1, key: "price_1" as const, cls: "bg-primary text-primary-foreground", label: "1u" },
-] as const;
-
-export const CATEGORIES: Category[] = [
+export const CATEGORIES = [
   { id: "todas", name: "Todos", icon: "✨" },
-  { id: "flores", name: "Flores", icon: "💐" },
-  { id: "peluches", name: "Peluches", icon: "🧸" },
-  { id: "papeles", name: "Papeles", icon: "📄" },
-  { id: "cajas", name: "Cajas", icon: "📦" },
-  { id: "cintas", name: "Cintas", icon: "🎀" },
-  { id: "globos", name: "Globos", icon: "🎈" },
-  { id: "accesorios", name: "Accesorios", icon: "✂️" },
-  { id: "hotwheels", name: "HotWheels", icon: "🏎️" },
+
+  { id: "para-enamorar", name: "Para enamorar", icon: "💘" },
+  { id: "momentos-especiales", name: "Momentos especiales", icon: "✨" },
+  { id: "para-sorprender", name: "Para sorprender", icon: "🎁" },
+  { id: "para-celebrar", name: "Para celebrar", icon: "🎉" },
+  { id: "para-agradecer", name: "Para agradecer", icon: "💌" },
+  { id: "para-pedir-perdon", name: "Para pedir perdón", icon: "🌷" },
+  { id: "para-acompanar", name: "Para acompañar", icon: "🤍" },
 ];

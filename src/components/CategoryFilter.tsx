@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { Category } from "@/types/product";
 
 interface CategoryFilterProps {
@@ -17,7 +18,11 @@ export function CategoryFilter({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const allCategory = categories.find((c) => c.id === "all") ?? categories[0];
+  const allCategory =
+    categories.find((c) => c.id === "todas") ??
+    categories.find((c) => c.id === "all") ??
+    categories[0];
+
   const scrollableCategories = categories.filter(
     (c) => c.id !== allCategory?.id
   );
@@ -61,13 +66,14 @@ export function CategoryFilter({
 
   const getButtonClass = (id: string) =>
     active === id
-      ? "filter-chip-active scale-[1.04]"
-      : "filter-chip";
+      ? "category-chip category-chip-active"
+      : "category-chip";
 
   return (
-    <div className="w-full">
+    <section className="category-filter">
+      
       {/* Desktop */}
-      <div className="hidden md:flex gap-3 overflow-x-auto pb-6 no-scrollbar px-2">
+      <div className="category-filter-desktop">
         {categories.map((c) => (
           <button
             key={c.id}
@@ -76,46 +82,32 @@ export function CategoryFilter({
             title={c.name}
             className={getButtonClass(c.id)}
           >
-            <span className="shrink-0">{c.icon}</span>
-            <span className="max-w-[120px] truncate tracking-tight">
-              {c.name}
-            </span>
+            <span className="category-chip-icon">{c.icon}</span>
+            <span className="category-chip-name">{c.name}</span>
           </button>
         ))}
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden px-2 pb-6">
-        <div className="relative flex items-center gap-2">
-          {/* Todos fijo */}
+      <div className="category-filter-mobile">
+        <div className="category-filter-mobile-row">
           {allCategory && (
             <button
               type="button"
               onClick={() => onSelect(allCategory.id)}
               title={allCategory.name}
-              className={`${getButtonClass(allCategory.id)} relative z-10`}
+              className={`${getButtonClass(allCategory.id)} category-chip-fixed`}
             >
-              <span className="shrink-0">{allCategory.icon}</span>
-              <span className="max-w-[78px] truncate tracking-tight">
-                {allCategory.name}
-              </span>
+              <span className="category-chip-icon">{allCategory.icon}</span>
+              <span className="category-chip-name">{allCategory.name}</span>
             </button>
           )}
 
-          {/* Contenedor deslizable */}
-          <div className="relative min-w-0 flex-1">
-            {canScrollLeft && (
-              <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-[var(--w-bg)] to-transparent" />
-            )}
+          <div className="category-scroll-wrap">
+            {canScrollLeft && <div className="category-fade category-fade-left" />}
+            {canScrollRight && <div className="category-fade category-fade-right" />}
 
-            {canScrollRight && (
-              <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-[var(--w-bg)] to-transparent" />
-            )}
-
-            <div
-              ref={scrollRef}
-              className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
-            >
+            <div ref={scrollRef} className="category-scroll">
               {scrollableCategories.map((c) => (
                 <button
                   key={c.id}
@@ -124,32 +116,26 @@ export function CategoryFilter({
                   title={c.name}
                   className={getButtonClass(c.id)}
                 >
-                  <span className="shrink-0">{c.icon}</span>
-                  <span className="max-w-[90px] truncate tracking-tight">
-                    {c.name}
-                  </span>
+                  <span className="category-chip-icon">{c.icon}</span>
+                  <span className="category-chip-name">{c.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Ver más */}
           <button
             type="button"
             onClick={() => scrollByAmount("right")}
             aria-label="Ver más categorías"
             className={[
-              "inline-flex h-[42px] min-w-[42px] items-center justify-center rounded-2xl border bg-white text-lg font-black transition-all duration-200",
-              "text-[var(--w-primary)] border-[#d8e2ed] hover:border-[var(--w-primary)] hover:bg-[var(--w-primary-soft)]",
-              canScrollRight
-                ? "opacity-100"
-                : "opacity-40 pointer-events-none",
+              "category-more-button",
+              canScrollRight ? "category-more-button-visible" : "category-more-button-disabled",
             ].join(" ")}
           >
             ›
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

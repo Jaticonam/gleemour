@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BRAND_CONFIG } from "@/config/brand";
 import {
   ShoppingBag,
   X,
@@ -7,8 +8,9 @@ import {
   Trash2,
   Sparkles,
   MessageCircle,
-  Zap,
+  Gift,
 } from "lucide-react";
+
 import { CartItem } from "@/types/product";
 import { getEffectivePrice } from "@/lib/products";
 
@@ -23,95 +25,60 @@ interface CartSidebarProps {
   onChangeQty: (id: string, delta: number) => void;
   onSetQty: (id: string, qty: number | null) => void;
   onChangeNote: (id: string, note: string) => void;
-  onClearCart: () => void;
-}
-const CART_TIERS = [
-  { qty: 1, key: "price_1" as const, cls: "active-1", label: "1u" },
-  { qty: 3, key: "price_3" as const, cls: "active-3", label: "3u" },
-  { qty: 12, key: "price_12" as const, cls: "active-12", label: "12u" },
-  { qty: 50, key: "price_50" as const, cls: "active-50", label: "50u" },
-  { qty: 100, key: "price_100" as const, cls: "active-100", label: "100u" },
-];
-
-const TIER_COLORS: Record<string, string> = {
-  "active-1": "bg-primary text-primary-foreground border-primary shadow-primary/20",
-  "active-3": "bg-tertiary text-tertiary-foreground border-tertiary shadow-tertiary/20",
-  "active-12": "bg-secondary text-secondary-foreground border-secondary shadow-secondary/20",
-  "active-50": "bg-purple-500 text-white border-purple-500 shadow-purple-500/20",
-  "active-100": "bg-dark text-primary-foreground border-dark shadow-black/20",
-};
-
-function getBubbleClass(item: CartItem): string {
-  if (item.price_100 && item.qty >= 100) return "bg-dark text-primary-foreground";
-  if (item.price_50 && item.qty >= 50) return "bg-purple-500 text-primary-foreground";
-  if (item.price_12 && item.qty >= 12) return "bg-secondary text-secondary-foreground";
-  if (item.price_3 && item.qty >= 3) return "bg-tertiary text-tertiary-foreground";
-  return "bg-primary text-primary-foreground";
+  onClearCart?: () => void;
 }
 
-function getActiveTierQty(item: CartItem): number {
-  if (item.price_100 && item.qty >= 100) return 100;
-  if (item.price_50 && item.qty >= 50) return 50;
-  if (item.price_12 && item.qty >= 12) return 12;
-  if (item.price_3 && item.qty >= 3) return 3;
-  return 1;
-}
-
-function getTierUnlockMessage(item: CartItem): string | null {
-  const activeTier = getActiveTierQty(item);
-  if (activeTier >= 100) return "🔥 Mejor precio máximo activado";
-  if (activeTier >= 50) return "⚡ Precio mayorista fuerte activado";
-  if (activeTier >= 12) return "✨ Precio por volumen activado";
-  if (activeTier >= 3) return "🎉 Precio por pack activado";
-  return null;
-}
+const WHATSAPP_NUMBER = "51936188636";
 
 function checkout(
   cart: CartItem[],
   total: string,
   savings: number,
-  onClearCart: () => void,
+  onClearCart: (() => void) | undefined,
   onClose: () => void
 ) {
   if (cart.length === 0) return;
 
-  let m = "*NUEVO PEDIDO WOOLY - MAYORISTAS*\n\n";
-  m += "Hola, deseo pedir lo siguiente:\n\n";
+  let message = `${BRAND_CONFIG.checkout.whatsappTitle}\n\n`;
+  message += `${BRAND_CONFIG.checkout.intro}\n\n`;
 
-  cart.forEach((i) => {
-    const p = getEffectivePrice(i);
-    const subtotal = p * i.qty;
-    const note = i.note?.trim().replace(/\s+/g, " ");
+  cart.forEach((item) => {
+    const price = getEffectivePrice(item);
+    const subtotal = price * item.qty;
+    const note = item.note?.trim().replace(/\s+/g, " ");
 
-    m += `• *[ ${i.id} ]* | *${i.title}*\n`;
-    m += `  Cantidad: ${i.qty} u\n`;
-    m += `  Precio: S/${p.toFixed(2)}\n`;
-    m += `  Subtotal: S/${subtotal.toFixed(2)}\n`;
+    message += `• *${item.title}*\n`;
+    message += `  Cantidad: ${item.qty}\n`;
+    message += `  Subtotal: S/${subtotal.toFixed(2)}\n`;
 
     if (note) {
-      m += `*Detalle:* ${note}\n`;
+      message += `  Detalle: ${note}\n`;
     }
 
-    m += "\n";
+    message += "\n";
   });
 
-  m += "━━━━━━━━━━━━━━━\n";
-  m += `*Total estimado: S/${total}*\n`;
+  message += "━━━━━━━━━━━━━━━\n";
+  message += `*${BRAND_CONFIG.cart.totalLabel}: S/${total}*\n`;
 
   if (savings > 0) {
-    m += `Ahorro estimado: S/${savings.toFixed(2)}\n`;
+    message += `Beneficio aplicado: S/${savings.toFixed(2)}\n`;
   }
 
-  m += "\nConfirmar disponibilidad, gracias.";
+  message += `\n${BRAND_CONFIG.checkout.closing}`;
 
-  const url = `https://wa.me/51936188636?text=${encodeURIComponent(m)}`;
+  const url = `https://wa.me/${BRAND_CONFIG.contact.whatsapp}?text=${encodeURIComponent(
+    message
+  )}`;
+
   window.open(url, "_blank");
 
-    setTimeout(() => {
-      onClearCart();
-      onClose();
-    }, 300);
-  }
+  setTimeout(() => {
+    onClearCart?.();
+    onClose();
+  }, 300);
+}
+
 
 function QtyInput({
   item,
@@ -151,7 +118,7 @@ function QtyInput({
         setQtyInput(value);
         onSetQty(item.id, parseInt(value, 10));
       }}
-      className="w-12 text-center text-xs font-black text-foreground bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      className="cart-sidebar-qty-input"
       aria-label={`Cantidad de ${item.title}`}
     />
   );
@@ -169,19 +136,20 @@ function NoteTextarea({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
     el.style.height = "0px";
     el.style.height = `${el.scrollHeight}px`;
   }, [item.note]);
 
   return (
-    <div className="mt-1">
-     <textarea
+    <div className="cart-sidebar-note-wrap">
+      <textarea
         ref={ref}
         rows={1}
         value={item.note || ""}
         onChange={(e) => onChangeNote(item.id, e.target.value)}
-        placeholder="Detalla tu pedido. Ej.: 2 rojos, 4 azules, con moño, etc."
-        className="w-full resize-none overflow-hidden rounded-2xl border border-border bg-muted/60 px-4 py-3 text-[12px] text-foreground placeholder:text-muted-foreground/70 outline-none focus:border-primary focus:bg-background transition-colors"
+        placeholder="Dedicatoria, color favorito, horario de entrega o algún detalle especial."
+        className="cart-sidebar-note"
       />
     </div>
   );
@@ -202,16 +170,9 @@ function CartRow({
 }) {
   const activePrice = getEffectivePrice(item);
   const subtotal = activePrice * item.qty;
-  const activeTierQty = getActiveTierQty(item);
-  const tierMessage = getTierUnlockMessage(item);
 
   const prevQtyRef = useRef(item.qty);
-  const prevPriceRef = useRef(activePrice);
-  const prevTierRef = useRef(activeTierQty);
-
   const [qtyPulse, setQtyPulse] = useState(false);
-  const [pricePulse, setPricePulse] = useState(false);
-  const [tierFlash, setTierFlash] = useState(false);
 
   useEffect(() => {
     if (prevQtyRef.current !== item.qty) {
@@ -222,129 +183,51 @@ function CartRow({
     }
   }, [item.qty]);
 
-  useEffect(() => {
-    if (prevPriceRef.current !== activePrice) {
-      setPricePulse(true);
-      const timer = setTimeout(() => setPricePulse(false), 280);
-      prevPriceRef.current = activePrice;
-      return () => clearTimeout(timer);
-    }
-  }, [activePrice]);
-
-  useEffect(() => {
-    if (prevTierRef.current !== activeTierQty) {
-      setTierFlash(true);
-      const timer = setTimeout(() => setTierFlash(false), 1500);
-      prevTierRef.current = activeTierQty;
-      return () => clearTimeout(timer);
-    }
-  }, [activeTierQty]);
-
-  const itemTiers = useMemo(() => {
-    return CART_TIERS.filter((tier) => {
-      const value = item[tier.key];
-      return value !== null && value !== undefined && value > 0;
-    });
-  }, [item]);
-
   return (
-    <div
-      className={`bg-card p-4 rounded-[28px] border border-border flex flex-col gap-4 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-[1px] ${
-        qtyPulse ? "scale-[1.01]" : "scale-100"
-      }`}
+    <article
+      className={[
+        "cart-sidebar-item",
+        qtyPulse ? "cart-sidebar-item-pulse" : "",
+      ].join(" ")}
     >
-      <div className="flex gap-4">
-        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
-          <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+      <div className="cart-sidebar-item-main">
+        <div className="cart-sidebar-item-img">
+          <img src={item.img} alt={item.title} />
         </div>
 
-        <div className="flex-grow text-left min-w-0">
-          <div className="flex justify-between items-start gap-3">
-            <div className="min-w-0">
-              <h4 className="text-[12px] font-black text-foreground leading-tight tracking-tight capitalize">
-                {item.title}
-              </h4>
-              <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wide">
-                {item.id}
-              </p>
+        <div className="cart-sidebar-item-info">
+          <div className="cart-sidebar-item-top">
+            <div>
+              <h4>{item.title}</h4>
+              <p>{item.id}</p>
             </div>
 
             <button
               onClick={() => onRemove(item.id)}
-              className="text-border hover:text-destructive transition-colors flex-shrink-0"
+              className="cart-sidebar-remove"
               aria-label={`Eliminar ${item.title}`}
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="flex items-baseline gap-1 min-w-0">
-              <span className="text-[9px] font-black text-muted-foreground uppercase">S/</span>
-              <span
-                className={`text-xl font-black text-foreground tracking-tighter transition-all duration-300 ${
-                  pricePulse ? "scale-105 text-primary" : "scale-100"
-                }`}
-              >
-                {subtotal.toFixed(2)}
-              </span>
+          <div className="cart-sidebar-item-price-row">
+            <div>
+              <span>Subtotal</span>
+              <strong>S/ {subtotal.toFixed(2)}</strong>
             </div>
 
-            <div
-              className={`px-3 py-1 rounded-full font-black text-[10px] transition-all duration-300 ${
-                getBubbleClass(item)
-              } ${pricePulse ? "scale-105 shadow-md" : "scale-100"}`}
-            >
+            <div className="cart-sidebar-unit-price">
               U: S/ {activePrice.toFixed(2)}
             </div>
           </div>
-
-          {tierMessage && (
-            <div
-              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black transition-all duration-300 ${
-                tierFlash
-                  ? "bg-secondary/15 text-secondary scale-[1.03]"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <Zap className={`w-3.5 h-3.5 ${tierFlash ? "animate-pulse" : ""}`} />
-              {tierMessage}
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1 flex-grow flex-wrap">
-          {itemTiers.map((tier, index) => {
-            const nextTier = itemTiers[index + 1];
-            const isActive =
-              item.qty >= tier.qty && (!nextTier || item.qty < nextTier.qty);
-
-            return (
-              <button
-                key={tier.qty}
-                onClick={() => onSetQty(item.id, tier.qty)}
-                className={`flex-1 h-[38px] rounded-[14px] border text-[11px] font-extrabold transition-all duration-300 ${
-                  isActive
-                    ? `${TIER_COLORS[tier.cls]} scale-[1.02] shadow-md`
-                    : "bg-muted text-muted-foreground border-transparent hover:bg-background"
-                }`}
-              >
-                {tier.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          className={`flex items-center bg-muted rounded-2xl p-1 min-w-[116px] border border-border transition-all duration-300 ${
-            qtyPulse ? "shadow-md ring-2 ring-primary/10" : ""
-          }`}
-        >
+      <div className="cart-sidebar-item-controls">
+        <div className="cart-sidebar-qty">
           <button
             onClick={() => onChangeQty(item.id, -1)}
-            className="w-8 h-8 bg-card rounded-xl shadow-sm flex items-center justify-center text-primary active:scale-90 hover:scale-105 transition-transform"
             aria-label={`Disminuir cantidad de ${item.title}`}
           >
             <Minus className="w-4 h-4" />
@@ -354,16 +237,20 @@ function CartRow({
 
           <button
             onClick={() => onChangeQty(item.id, 1)}
-            className="w-8 h-8 bg-card rounded-xl shadow-sm flex items-center justify-center text-primary active:scale-90 hover:scale-105 transition-transform"
             aria-label={`Aumentar cantidad de ${item.title}`}
           >
             <Plus className="w-4 h-4" />
           </button>
         </div>
+
+        <div className="cart-sidebar-item-helper">
+          <Gift className="w-3.5 h-3.5" />
+          <span>Personaliza tu detalle</span>
+        </div>
       </div>
 
       <NoteTextarea item={item} onChangeNote={onChangeNote} />
-    </div>
+    </article>
   );
 }
 
@@ -383,45 +270,39 @@ export function CartSidebar({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[1500] flex justify-end"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md bg-card h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-border flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+    <div className="cart-sidebar-overlay" onClick={onClose}>
+      <aside className="cart-sidebar-panel" onClick={(e) => e.stopPropagation()}>
+        <header className="cart-sidebar-header">
+          <div className="cart-sidebar-title-wrap">
+            <div className="cart-sidebar-icon">
               <ShoppingBag className="w-5 h-5" />
             </div>
+
             <div>
-              <h2 className="text-lg font-black text-foreground leading-none capitalize">
-                Mi Pedido
-              </h2>
-              <span className="text-[10px] font-bold text-muted-foreground mt-1 uppercase">
-                {cart.length} items seleccionados
+              <h2>Mi Pedido</h2>
+              <span>
+                {cart.length === 1
+                  ? "1 detalle seleccionado"
+                  : `${cart.length} detalles seleccionados`}
               </span>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Cerrar carrito"
+            className="cart-sidebar-close"
+            aria-label="Cerrar pedido"
           >
             <X className="w-5 h-5" />
           </button>
-        </div>
+        </header>
 
-        <div className="flex-grow overflow-y-auto p-5 space-y-4 bg-muted/30">
+        <div className="cart-sidebar-body">
           {cart.length === 0 ? (
-            <div className="py-20 flex flex-col items-center opacity-30 text-center">
-              <ShoppingBag className="w-12 h-12 mb-3" />
-              <p className="font-black text-[11px] capitalize tracking-wide">
-                Carrito Vacío
-              </p>
+            <div className="cart-sidebar-empty">
+              <ShoppingBag className="w-12 h-12" />
+              <p>Aún no has elegido tu detalle</p>
+              <small>Explora el catálogo y agrega algo bonito para sorprender.</small>
             </div>
           ) : (
             cart.map((item) => (
@@ -437,41 +318,33 @@ export function CartSidebar({
           )}
         </div>
 
-        <div className="p-8 bg-card border-t border-border">
+        <footer className="cart-sidebar-footer">
           {savings > 0 && (
-            <div className="mb-6 bg-secondary/10 border border-secondary/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in duration-300">
-              <div className="flex items-center gap-2 text-secondary">
-                <Sparkles className="w-4 h-4 fill-current animate-pulse" />
-                <span className="text-[11px] font-black tracking-tight capitalize">
-                  ¡Ahorro Wooly Aplicado!
-                </span>
+            <div className="cart-sidebar-benefit">
+              <div>
+                <Sparkles className="w-4 h-4" />
+                <span>Beneficio aplicado</span>
               </div>
-              <span className="text-sm font-black text-secondary">
-                - S/ {savings.toFixed(2)}
-              </span>
+
+              <strong>- S/ {savings.toFixed(2)}</strong>
             </div>
           )}
 
-          <div className="flex justify-between items-end mb-8">
-            <div className="flex flex-col text-left">
-              <span className="text-[9px] font-black text-muted-foreground tracking-widest mb-1 capitalize">
-                Total Estimado
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs font-black text-muted-foreground">S/</span>
-                <span className="text-4xl font-black text-foreground tracking-tighter transition-all duration-300">
-                  {totalPrice.toFixed(2)}
-                </span>
+          <div className="cart-sidebar-total-row">
+            <div>
+              <span>Total a pagar hoy</span>
+
+              <div className="cart-sidebar-total">
+                <small>S/</small>
+                <strong>{totalPrice.toFixed(2)}</strong>
               </div>
+
+              <p>Estás a un paso de sorprender a alguien.</p>
             </div>
 
-            <div className="bg-muted px-4 py-2 rounded-xl text-center border border-border">
-              <span className="block text-lg font-black text-foreground leading-none">
-                {totalItems}
-              </span>
-              <span className="text-[8px] font-bold text-muted-foreground tracking-tighter capitalize">
-                Unidades
-              </span>
+            <div className="cart-sidebar-units">
+              <strong>{totalItems}</strong>
+              <span>unidades</span>
             </div>
           </div>
 
@@ -486,17 +359,18 @@ export function CartSidebar({
               )
             }
             disabled={cart.length === 0}
-            className={`w-full py-4 rounded-2xl font-black text-sm capitalize tracking-wide transition-all flex items-center justify-center gap-3 ${
+            className={[
+              "cart-sidebar-checkout",
               cart.length > 0
-                ? "bg-whatsapp hover:bg-whatsapp-dark text-primary-foreground shadow-lg shadow-whatsapp/30 active:scale-[0.98]"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
+                ? "cart-sidebar-checkout-active"
+                : "cart-sidebar-checkout-disabled",
+            ].join(" ")}
           >
             <MessageCircle className="w-5 h-5" />
-            Confirmar Pedido
+            <span>Enviar pedido por WhatsApp</span>
           </button>
-        </div>
-      </div>
+        </footer>
+      </aside>
     </div>
   );
 }

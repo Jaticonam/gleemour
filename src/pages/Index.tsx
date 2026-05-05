@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchX } from "lucide-react";
+
 import { useCart } from "@/hooks/use-cart";
 import { fetchProducts } from "@/lib/products";
 import { searchProducts } from "@/lib/search";
 import { sortByCommercialPriority } from "@/lib/sort";
 import { Product, CATEGORIES } from "@/types/product";
+
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { HeaderBar } from "@/components/HeaderBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
@@ -24,13 +26,15 @@ const HIGHLIGHT_PRIORITY = 50;
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("todas");
+  const [activeCategory] = useState("todas");
   const [searchQuery, setSearchQuery] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [zoomImage, setZoomImage] = useState<{ src: string; title: string } | null>(null);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const navigate = useNavigate();
 
   const {
     cart,
@@ -52,15 +56,15 @@ const Index = () => {
     });
   }, []);
 
-  const navigate = useNavigate();
-
-  const handleCategorySelect = useCallback((id: string) => {
-    if (id === "todas") {
-      navigate("/catalogo");
-    } else {
-      navigate(`/catalogo/categoria.html?cat=${id}`);
-    }
-  }, [navigate]
+  const handleCategorySelect = useCallback(
+    (id: string) => {
+      if (id === "todas") {
+        navigate("/catalogo");
+      } else {
+        navigate(`/catalogo/categoria.html?cat=${encodeURIComponent(id)}`);
+      }
+    },
+    [navigate]
   );
 
   const handleAddToCart = useCallback(
@@ -71,10 +75,6 @@ const Index = () => {
     },
     [addToCart]
   );
-
-  const handleCloseAddModal = useCallback(() => {
-    setAddModalOpen(false);
-  }, []);
 
   const handleAddExtra = useCallback(
     (qty: number) => {
@@ -149,7 +149,7 @@ const Index = () => {
   }, [filteredProducts, showPriorityBlocks]);
 
   const renderGrid = (items: Product[]) => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-6 px-2 md:px-0">
+    <div className="catalog-grid">
       {items.map((p) => (
         <ProductCard
           key={p.id}
@@ -162,9 +162,11 @@ const Index = () => {
     </div>
   );
 
+  if (loading) return <CatalogSkeleton />;
+
   return (
-    <div className="min-h-screen bg-background pb-40">
-      <header className="sticky top-0 z-[100] w-full flex flex-col shadow-sm">
+    <div className="catalog-page">
+      <header className="catalog-sticky-header">
         <CountdownTimer />
         <HeaderBar
           searchQuery={searchQuery}
@@ -173,83 +175,74 @@ const Index = () => {
         />
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 md:px-4 mt-6 md:mt-8">
+      <main className="catalog-main">
+        <section className="catalog-hero">
+          <p className="catalog-kicker">Catálogo Gleemour</p>
+          <h1>Elige el detalle perfecto</h1>
+          <p>
+            Encuentra regalos listos para sorprender, agradecer, celebrar o decir eso que a veces cuesta poner en palabras.
+          </p>
+        </section>
+
         <CategoryFilter
           categories={CATEGORIES}
           active={activeCategory}
           onSelect={handleCategorySelect}
         />
 
-        {loading ? (
-          <CatalogSkeleton />
-        ) : filteredProducts.length === 0 ? (
-                  
-          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <div className="bg-muted p-6 rounded-full mb-4">
-              <SearchX className="w-10 h-10 opacity-30" />
+        {filteredProducts.length === 0 ? (
+          <div className="catalog-empty">
+            <div className="catalog-empty-icon">
+              <SearchX className="w-10 h-10" />
             </div>
-            <p className="font-black text-sm tracking-widest text-center">
-              Sin resultados
-            </p>
+            <p>Sin resultados</p>
+            <small>Prueba con otra palabra o elige una categoría emocional.</small>
           </div>
         ) : (
-          <div className="space-y-8">
-           {showPriorityBlocks && topProducts.length > 0 && (
-            <section className="space-y-3">
-              <div className="px-2 md:px-0">
-                <h2 className="text-lg md:text-xl font-black text-foreground">
-                  🔥 Lo más vendido hoy
-                </h2>
-                <p className="text-[12px] text-muted-foreground font-medium">
-                  Productos con mayor rotación ahora mismo.
-                </p>
-              </div>
-              {renderGrid(topProducts)}
-            </section>
-          )}
+          <div className="catalog-sections">
+            {showPriorityBlocks && topProducts.length > 0 && (
+              <section className="catalog-section">
+                <div className="catalog-section-header">
+                  <h2>Favoritos para sorprender hoy</h2>
+                  <p>Detalles con mayor intención de compra. Bonitos, rápidos y sin drama logístico.</p>
+                </div>
+                {renderGrid(topProducts)}
+              </section>
+            )}
 
-          {showPriorityBlocks && strongProducts.length > 0 && (
-            <section className="space-y-3">
-              <div className="px-2 md:px-0">
-                <h2 className="text-lg md:text-xl font-black text-foreground">
-                  ⭐ Recomendados para vender rápido
-                </h2>
-                <p className="text-[12px] text-muted-foreground font-medium">
-                  Seleccionados para vender fácil y mover stock.
-                </p>
-              </div>
-              {renderGrid(strongProducts)}
-            </section>
-          )}
+            {showPriorityBlocks && strongProducts.length > 0 && (
+              <section className="catalog-section">
+                <div className="catalog-section-header">
+                  <h2>Recomendados por ocasión</h2>
+                  <p>Opciones pensadas para elegir rápido según el momento.</p>
+                </div>
+                {renderGrid(strongProducts)}
+              </section>
+            )}
 
-          {showPriorityBlocks && highlightProducts.length > 0 && (
-            <section className="space-y-3">
-              <div className="px-2 md:px-0">
-                <h2 className="text-lg md:text-xl font-black text-foreground">
-                  🟡 Oportunidades del catálogo
-                </h2>
-                <p className="text-[12px] text-muted-foreground font-medium">
-                  Opciones para ampliar tu oferta y comprar con estrategia.
-                </p>
-              </div>
-              {renderGrid(highlightProducts)}
-            </section>
-          )} 
-          {regularProducts.length > 0 && (
-            <section className="space-y-3">
-              <div className="px-2 md:px-0">
-                <h2 className="text-lg md:text-xl font-black text-foreground">
-                  {showPriorityBlocks ? "🛍️ Todo el catálogo" : "🛍️ Resultados"}
-                </h2>
-                <p className="text-[12px] text-muted-foreground font-medium">
-                  {showPriorityBlocks
-                    ? "Explora todos los productos disponibles para tu negocio."
-                    : "Productos encontrados según tu búsqueda o categoría."}
-                </p>
-              </div>
-              {renderGrid(regularProducts)}
-            </section>
-          )}
+            {showPriorityBlocks && highlightProducts.length > 0 && (
+              <section className="catalog-section">
+                <div className="catalog-section-header">
+                  <h2>Ideas bonitas para regalar</h2>
+                  <p>Detalles con ese punto emocional que convierte un día normal en historia.</p>
+                </div>
+                {renderGrid(highlightProducts)}
+              </section>
+            )}
+
+            {regularProducts.length > 0 && (
+              <section className="catalog-section">
+                <div className="catalog-section-header">
+                  <h2>{showPriorityBlocks ? "Todo el catálogo" : "Resultados"}</h2>
+                  <p>
+                    {showPriorityBlocks
+                      ? "Explora todos los detalles disponibles."
+                      : "Detalles encontrados según tu búsqueda."}
+                  </p>
+                </div>
+                {renderGrid(regularProducts)}
+              </section>
+            )}
           </div>
         )}
       </main>
@@ -281,7 +274,7 @@ const Index = () => {
         open={addModalOpen}
         product={selectedProduct}
         currentQty={currentQtyInCart}
-        onClose={handleCloseAddModal}
+        onClose={() => setAddModalOpen(false)}
         onAddExtra={handleAddExtra}
         onOpenCart={() => {
           setAddModalOpen(false);

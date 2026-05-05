@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ArrowLeft,
   PlusCircle,
-  Lock,
   CheckCircle,
   AlertTriangle,
   Clock,
@@ -11,10 +10,12 @@ import {
   Minus,
   Plus,
   Share2,
+  MessageCircle,
 } from "lucide-react";
 
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+
 import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
-import { PRICE_TIERS } from "@/config/priceTiers";
 import { useCart } from "@/hooks/use-cart";
 import { fetchProducts, isProductAvailable } from "@/lib/products";
 import { Product } from "@/types/product";
@@ -29,37 +30,16 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/skeletons/ProductSkeleton";
 import { AddToCartModal } from "@/components/AddToCartModal";
 
-const getUnitPrice = (qty: number, product: Product) => {
-  if (qty >= 100 && product.price_100) return product.price_100;
-  if (qty >= 50 && product.price_50) return product.price_50;
-  if (qty >= 12 && product.price_12) return product.price_12;
-  if (qty >= 3 && product.price_3) return product.price_3;
-  return product.price_1 || 0;
-};
+const WHATSAPP_NUMBER = "51936188636";
 
-const getNextTier = (qty: number, product: Product) => {
-  if (qty < 3 && product.price_3) return { qty: 3, price: product.price_3 };
-  if (qty < 12 && product.price_12) return { qty: 12, price: product.price_12 };
-  if (qty < 50 && product.price_50) return { qty: 50, price: product.price_50 };
-  if (qty < 100 && product.price_100) return { qty: 100, price: product.price_100 };
-  return null;
+const getProductPrice = (product: Product) => {
+  return product.price ?? product.price_1 ?? 0;
 };
-
-import {
-  useParams,
-  useNavigate,
-  useSearchParams,
-  useLocation
-} from "react-router-dom";
 
 const ProductDetailPage = () => {
   const { id: paramId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const fromSearch = location.state?.fromSearch;
-  const searchQuery = location.state?.searchQuery;
 
   const currentCategory = searchParams.get("cat") || "";
   const id = searchParams.get("id") || paramId;
@@ -69,7 +49,6 @@ const ProductDetailPage = () => {
 
   const [cartOpen, setCartOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
-
   const [zoomImage, setZoomImage] = useState<{ src: string; title: string } | null>(null);
 
   const [qty, setQty] = useState(1);
@@ -77,9 +56,6 @@ const ProductDetailPage = () => {
   const [modalQty, setModalQty] = useState(0);
 
   const [viewers, setViewers] = useState(() => Math.floor(Math.random() * 8) + 6);
-  const [lastTier, setLastTier] = useState(1);
-  const [showUnlock, setShowUnlock] = useState(false);
-  const [pricePulse, setPricePulse] = useState(false);
 
   const {
     cart,
@@ -109,23 +85,11 @@ const ProductDetailPage = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "smooth",
-      });
-    }, 0);
-
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     setQty(1);
     setQtyInput("1");
     setModalQty(0);
-    setLastTier(1);
-    setShowUnlock(false);
-    setPricePulse(false);
     setAddModalOpen(false);
-
-    return () => clearTimeout(timer);
   }, [id]);
 
   const product = useMemo(
@@ -134,13 +98,11 @@ const ProductDetailPage = () => {
   );
 
   const available = product ? isProductAvailable(product) : false;
-  const isPreventa =
-    (product?.status || "").trim().toLowerCase() === "preventa";
+  const isPreventa = (product?.status || "").trim().toLowerCase() === "preventa";
+  const productPrice = product ? getProductPrice(product) : 0;
 
   const isOutOfStock =
-    !!product && !isPreventa && !!product.price_1 && product.stock === 0;
-
-  const showWhatsAppButton = isPreventa || isOutOfStock;
+    !!product && !isPreventa && productPrice > 0 && product.stock === 0;
 
   const currentCartQty = useMemo(() => {
     if (!product) return 0;
@@ -154,53 +116,7 @@ const ProductDetailPage = () => {
 
   const isQtyInputValid = parsedQtyInput !== null && parsedQtyInput >= 1;
   const effectiveQty = isQtyInputValid ? parsedQtyInput : qty;
-
-  const unitPrice = product ? getUnitPrice(effectiveQty, product) : 0;
-  const total = unitPrice * effectiveQty;
-  const nextTier = product ? getNextTier(effectiveQty, product) : null;
-
-  const savingsByQty =
-    product && product.price_1 > unitPrice
-      ? (product.price_1 - unitPrice) * effectiveQty
-      : 0;
-
-  useEffect(() => {
-    if (!product) return;
-
-    let currentTier = 1;
-
-    if (effectiveQty >= 100 && product.price_100) currentTier = 100;
-    else if (effectiveQty >= 50 && product.price_50) currentTier = 50;
-    else if (effectiveQty >= 12 && product.price_12) currentTier = 12;
-    else if (effectiveQty >= 3 && product.price_3) currentTier = 3;
-
-    setPricePulse(true);
-    const pulseTimer = setTimeout(() => setPricePulse(false), 220);
-
-    let unlockTimer: ReturnType<typeof setTimeout> | null = null;
-
-    // 🔥 SUBE DE TIER
-    if (currentTier > lastTier && currentTier > 1) {
-      setShowUnlock(true);
-
-      unlockTimer = setTimeout(() => {
-        setShowUnlock(false);
-      }, 1800);
-    }
-
-    // 🔴 BAJA DE TIER
-    if (currentTier < lastTier) {
-      setShowUnlock(false);
-    }
-
-    setLastTier(currentTier);
-
-    return () => {
-      clearTimeout(pulseTimer);
-      if (unlockTimer) clearTimeout(unlockTimer);
-    };
-
-  }, [effectiveQty, product, lastTier]);
+  const total = productPrice * effectiveQty;
 
   const related = useMemo(() => {
     if (!product) return [];
@@ -255,9 +171,7 @@ const ProductDetailPage = () => {
 
   const handleQtyInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
-        e.currentTarget.blur();
-      }
+      if (e.key === "Enter") e.currentTarget.blur();
 
       if (e.key === "ArrowUp") {
         e.preventDefault();
@@ -280,8 +194,6 @@ const ProductDetailPage = () => {
     addToCart(product, parsedQtyInput);
     setModalQty(nextQtyInCart);
     setAddModalOpen(true);
-
-
   }, [
     product,
     available,
@@ -290,15 +202,6 @@ const ProductDetailPage = () => {
     currentCartQty,
     addToCart,
   ]);
-
-  const handleCloseAddModal = useCallback(() => {
-    setAddModalOpen(false);
-  }, []);
-
-  const handleOpenCartFromModal = useCallback(() => {
-    setAddModalOpen(false);
-    setCartOpen(true);
-  }, []);
 
   const handleAddExtraFromModal = useCallback(
     (extraQty: number) => {
@@ -310,15 +213,9 @@ const ProductDetailPage = () => {
       setModalQty(nextQty);
       setQty(nextQty);
       setQtyInput(String(nextQty));
-     
     },
     [product, modalQty, addToCart]
   );
-
-  const handleContinueAccumulating = useCallback(() => {
-    setAddModalOpen(false);
-    navigate("/catalogo");
-  }, [navigate]);
 
   const handleShare = useCallback(() => {
     if (!product) return;
@@ -331,72 +228,68 @@ const ProductDetailPage = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      showNotification("🔗 Enlace copiado", "Comparte este producto");
+      showNotification("Enlace copiado", "Comparte este detalle");
     }
   }, [product]);
 
   const handleWhatsApp = useCallback(() => {
     if (!product) return;
 
-    let message = "";
+    const statusText = isPreventa
+      ? "Quiero consultar este detalle en preventa"
+      : isOutOfStock
+      ? "Quiero saber si pueden preparar nuevamente este detalle"
+      : "Hola, quiero pedir este detalle";
 
-    if (isPreventa) {
-      message =
-        `Hola, quiero información sobre este producto en preventa:%0A%0A` +
-        `ID: ${product.id}%0AProducto: ${product.title}`;
-    } else if (isOutOfStock) {
-      message =
-        `Hola, quiero pedir reposición de este producto:%0A%0A` +
-        `ID: ${product.id}%0AProducto: ${product.title}`;
-    }
+    const message =
+      `${statusText}:%0A%0A` +
+      `Código: ${product.id}%0A` +
+      `Producto: ${product.title}%0A` +
+      `Precio: S/ ${productPrice.toFixed(2)}%0A` +
+      `Cantidad: ${effectiveQty}%0A%0A` +
+      `Quisiera coordinar disponibilidad, dedicatoria y entrega.`;
 
-    window.open(`https://wa.me/51936188636?text=${message}`, "_blank");
-  }, [product, isPreventa, isOutOfStock]);
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+  }, [product, productPrice, effectiveQty, isPreventa, isOutOfStock]);
 
-  let stockText = "Próximo";
-  let stockColorClass = "text-muted-foreground";
+  let stockText = "Próximo detalle";
+  let stockClass = "product-detail-status-muted";
   let StockIcon = Clock;
 
   if (product) {
     if (isPreventa) {
-      stockText = "Preventa";
-      stockColorClass = "text-green-700";
+      stockText = "Disponible en preventa";
+      stockClass = "product-detail-status-preorder";
       StockIcon = Clock;
-    } else if (!product.price_1 || product.price_1 <= 0 || product.stock === null || product.stock === undefined) {
-      stockText = "Próximo";
-      stockColorClass = "text-muted-foreground";
+    } else if (!productPrice || productPrice <= 0 || product.stock === null || product.stock === undefined) {
+      stockText = "Disponible pronto";
+      stockClass = "product-detail-status-muted";
       StockIcon = Clock;
     } else if (product.stock === 0) {
-      stockText = "Agotado";
-      stockColorClass = "text-destructive";
+      stockText = "Agotado temporalmente";
+      stockClass = "product-detail-status-danger";
       StockIcon = XCircle;
-    } else if (product.stock <= 12) {
-      stockText = `Últimas unidades: ${product.stock}`;
-      stockColorClass = "text-red-600";
+    } else if (product.stock <= 3) {
+      stockText = `Últimos disponibles: ${product.stock}`;
+      stockClass = "product-detail-status-danger";
       StockIcon = AlertTriangle;
-    } else if (product.stock <= 36) {
-      stockText = "Stock limitado";
-      stockColorClass = "text-orange-600";
+    } else if (product.stock <= 10) {
+      stockText = "Pocas unidades disponibles";
+      stockClass = "product-detail-status-warning";
       StockIcon = AlertTriangle;
-    } else if (product.stock <= 50) {
-      stockText = "Disponible para volumen";
-      stockColorClass = "text-green-700";
-      StockIcon = CheckCircle;
     } else {
-      stockText = "🚀 Alto stock disponible";
-      stockColorClass = "text-emerald-700";
+      stockText = "Disponible para sorprender hoy";
+      stockClass = "product-detail-status-success";
       StockIcon = CheckCircle;
     }
   }
 
-  if (loading) {
-    return <ProductSkeleton />;
-  }
+  if (loading) return <ProductSkeleton />;
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground font-black text-lg">Producto no encontrado</p>
+      <div className="product-detail-empty">
+        <p>Detalle no encontrado</p>
         <button
           onClick={() =>
             navigate(
@@ -405,7 +298,6 @@ const ProductDetailPage = () => {
                 : "/catalogo"
             )
           }
-          className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -414,278 +306,212 @@ const ProductDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="product-detail-page">
       <NotificationStack />
 
-      <header className="sticky top-0 z-[100] w-full flex flex-col shadow-sm">
+      <header className="product-detail-header">
         <CountdownTimer />
-        <div className="bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 md:py-4">
-          <div className="max-w-7xl mx-auto flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
 
-            <div className="flex-grow min-w-0">
-              <h1 className="text-sm md:text-base font-black text-foreground truncate">
-                {product.title}
-              </h1>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                {product.id}
-              </p>
-            </div>
+        <div className="product-detail-header-inner">
+          <button onClick={() => navigate(-1)} className="product-detail-icon-button">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-            <button
-              onClick={handleShare}
-              className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
+          <div className="product-detail-header-title">
+            <h1>{product.title}</h1>
+            <p>{product.id}</p>
           </div>
+
+          <button onClick={handleShare} className="product-detail-icon-button">
+            <Share2 className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 mt-6 md:mt-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          <div className="relative">
+      <main className="product-detail-main">
+        <section className="product-detail-grid">
+          <div className="product-detail-gallery">
             <div
-              className="aspect-square overflow-hidden rounded-3xl bg-muted border border-border shadow-lg group cursor-zoom-in"
+              className="product-detail-image-wrap"
               onClick={() => setZoomImage({ src: product.img, title: product.title })}
             >
               <img
                 src={product.img}
                 alt={product.title}
-                className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${
-                  !available ? "opacity-60 grayscale-[50%]" : ""
+                className={`product-detail-image ${
+                  !available ? "product-detail-image-disabled" : ""
                 }`}
               />
 
               {product.badges && product.badges.length > 0 && (
-                <div className="absolute top-4 left-4 flex flex-col gap-2 items-start max-w-[75%] z-10">
+                <div className="product-detail-badges">
                   {sortBadges(product.badges)
                     .slice(0, 3)
                     .map((badge, index) => {
                       const presentation = getBadgePresentation(badge);
 
                       return (
-                        <div
+                        <span
                           key={`${product.id}-detail-image-badge-${index}`}
                           className={[
-                            "px-3 py-1.5 rounded-full text-[10px] md:text-[11px] font-semibold leading-tight tracking-normal border border-white/10 shadow-md backdrop-blur-sm",
+                            "product-detail-badge",
                             presentation.className,
                             presentation.animation,
                           ].join(" ")}
                         >
                           {badge}
-                        </div>
+                        </span>
                       );
                     })}
                 </div>
               )}
 
-              <div className="absolute bottom-4 right-4 bg-card/80 backdrop-blur-sm p-2 rounded-xl text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="product-detail-zoom">
                 <ZoomIn className="w-5 h-5" />
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-2xl md:text-3xl font-black text-foreground leading-tight mb-3">
-                {product.title}
-              </h2>
+          <div className="product-detail-info">
+            <div>
+              <p className="product-detail-kicker">Detalle especial</p>
 
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                {product.description}
+              <h2 className="product-detail-title">{product.title}</h2>
+
+              <p className="product-detail-description">
+                {product.description ||
+                  "Un detalle pensado para sorprender, emocionar y hacer que ese momento se sienta especial."}
               </p>
             </div>
 
-            <div className="flex items-center justify-center md:justify-start gap-4 flex-wrap">
-              <div className={`inline-flex items-center gap-2 ${stockColorClass}`}>
+            <div className="product-detail-meta-row">
+              <div className={`product-detail-status ${stockClass}`}>
                 <StockIcon className="w-4 h-4" />
-                <span className="text-[12px] font-bold">{stockText}</span>
+                <span>{stockText}</span>
               </div>
 
               {available && (
-                <p className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[12px] font-bold">
-                  👀 {viewers} viendo ahora
-                </p>
+                <div className="product-detail-viewers">
+                  {viewers} personas viendo este detalle
+                </div>
               )}
             </div>
 
-            <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
-              {PRICE_TIERS.map((tier) => {
-                const value = product[tier.key];
-                if (!value) return null;
+            <div className="product-detail-price-box">
+              <p>Precio</p>
 
-                const active =
-                  (tier.qty === 1 && effectiveQty < 3) ||
-                  (tier.qty === 3 && effectiveQty >= 3 && effectiveQty < 12) ||
-                  (tier.qty === 12 && effectiveQty >= 12 && effectiveQty < 50) ||
-                  (tier.qty === 50 && effectiveQty >= 50 && effectiveQty < 100) ||
-                  (tier.qty === 100 && effectiveQty >= 100);
-
-                const colorMap = {
-                  price_1: active
-                    ? "bg-primary text-primary-foreground border-primary shadow-lg"
-                    : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15",
-                  price_3: active
-                    ? "bg-tertiary text-tertiary-foreground border-tertiary shadow-lg"
-                    : "bg-tertiary/10 text-tertiary border-tertiary/20 hover:bg-tertiary/15",
-                  price_12: active
-                    ? "bg-secondary text-secondary-foreground border-secondary shadow-lg"
-                    : "bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/15",
-                  price_50: active
-                    ? "bg-purple-500 text-white border-purple-500 shadow-lg"
-                    : "bg-purple-500/10 text-purple-600 border-purple-500/20 hover:bg-purple-500/15",
-                  price_100: active
-                    ? "bg-dark text-white border-dark shadow-lg"
-                    : "bg-dark/10 text-dark border-dark/20 hover:bg-dark/15",
-                } as const;
-
-                return (
-                  <button
-                    key={tier.key}
-                    type="button"
-                    onClick={() => updateQty(tier.qty)}
-                    className={`px-2.5 py-2 rounded-xl border transition-all duration-200 text-center min-w-[74px] md:min-w-[78px] shadow-sm cursor-pointer ${
-                      colorMap[tier.key]
-                    } ${active ? "scale-[1.03]" : "hover:scale-[1.02]"}`}
-                  >
-                    <p className="text-[11px] md:text-[11px] font-black tracking-wide leading-none">
-                      {tier.label}
-                    </p>
-                    <p className="text-[13px] md:text-sm font-black mt-1 leading-none">
-                      S/ {value.toFixed(2)}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="text-center md:text-left">
-              <div className="flex items-end justify-center md:justify-start gap-2">
-                <span className="text-lg md:text-xl font-black text-muted-foreground">S/</span>
-                <span
-                  className={`text-5xl md:text-6xl font-black text-primary tracking-tight leading-none transition-transform duration-200 ${
-                    pricePulse ? "scale-105" : "scale-100"
-                  }`}
-                >
-                  {unitPrice.toFixed(2)}
-
-                </span>
+              <div className="product-detail-price">
+                <span>S/</span>
+                <strong>{productPrice.toFixed(2)}</strong>
               </div>
 
-              {showUnlock && (
-                <p className="text-success font-bold text-sm mt-2">
-                  🎉 Mejor precio desbloqueado
-                </p>
-              )}
-
               {effectiveQty > 1 && (
-                <p className="text-sm text-foreground mt-2">
-                  Total: <strong>S/ {total.toFixed(2)}</strong>
-                </p>
-              )}
-
-              {savingsByQty > 0 && (
-                <p className="text-success font-semibold text-sm mt-1">
-                  💰 Estás pagando <strong>S/ {unitPrice.toFixed(2)}</strong> en lugar de{" "}
-                  <span className="line-through opacity-70">S/ {product.price_1.toFixed(2)}</span>
-                </p>
-              )}
-
-              {nextTier && (
-                <p className="text-primary text-sm font-semibold mt-1">
-                  🔥 Agrega {nextTier.qty - effectiveQty} más y baja a S/ {nextTier.price.toFixed(2)}
-                </p>
+                <small>
+                  Total del pedido: <strong>S/ {total.toFixed(2)}</strong>
+                </small>
               )}
 
               {!isQtyInputValid && (
-                <p className="text-destructive font-semibold text-sm mt-2">
+                <small className="product-detail-error">
                   Ingresa una cantidad válida para continuar
-                </p>
+                </small>
               )}
             </div>
 
             {available && (
-              <div className="flex justify-center md:justify-start items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => updateQty(effectiveQty - 1)}
-                  className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-foreground hover:bg-border transition-colors"
-                  aria-label="Disminuir cantidad"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
+              <div className="product-detail-qty-block">
+                <p>Cantidad</p>
 
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={qtyInput}
-                  onChange={(e) => handleQtyInputChange(e.target.value)}
-                  onBlur={handleQtyInputBlur}
-                  onKeyDown={handleQtyInputKeyDown}
-                  placeholder="0"
-                  className="w-24 h-12 rounded-xl border-2 border-border bg-background text-center text-2xl font-black text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/50"
-                  aria-label="Cantidad"
-                />
+                <div className="product-detail-qty">
+                  <button
+                    type="button"
+                    onClick={() => updateQty(effectiveQty - 1)}
+                    aria-label="Disminuir cantidad"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => updateQty(effectiveQty + 1)}
-                  className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-foreground hover:bg-border transition-colors"
-                  aria-label="Aumentar cantidad"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={qtyInput}
+                    onChange={(e) => handleQtyInputChange(e.target.value)}
+                    onBlur={handleQtyInputBlur}
+                    onKeyDown={handleQtyInputKeyDown}
+                    placeholder="1"
+                    aria-label="Cantidad"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => updateQty(effectiveQty + 1)}
+                    aria-label="Aumentar cantidad"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
 
-            {showWhatsAppButton ? (
+            <div className="product-detail-actions">
+              {available && (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!isQtyInputValid}
+                  className={[
+                    "product-detail-button",
+                    isQtyInputValid
+                      ? "product-detail-button-primary"
+                      : "product-detail-button-disabled",
+                  ].join(" ")}
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  <span>
+                    {isQtyInputValid
+                      ? `Agregar al pedido — S/ ${total.toFixed(2)}`
+                      : "Ingresa una cantidad"}
+                  </span>
+                </button>
+              )}
+
               <button
                 onClick={handleWhatsApp}
-                className="w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all flex items-center justify-center gap-3 bg-green-500 text-white hover:bg-green-600"
+                className="product-detail-button product-detail-button-whatsapp"
               >
-                <PlusCircle className="w-5 h-5" />
-                {isPreventa ? "Consultar por WhatsApp" : "Pedir reposición"}
+                <MessageCircle className="w-5 h-5" />
+                <span>
+                  {isPreventa
+                    ? "Consultar por WhatsApp"
+                    : isOutOfStock
+                    ? "Consultar disponibilidad"
+                    : "Pedir por WhatsApp"}
+                </span>
               </button>
-            ) : available ? (
-              <button
-                onClick={handleAddToCart}
-                disabled={!isQtyInputValid}
-                className={`w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all flex items-center justify-center gap-3 ${
-                  isQtyInputValid
-                    ? "bg-primary text-primary-foreground hover:scale-[1.02] active:scale-[0.98]"
-                    : "bg-muted text-muted-foreground cursor-not-allowed shadow-none"
-                }`}
-              >
-                <PlusCircle className="w-5 h-5" />
-                {isQtyInputValid
-                  ? `Agregar a caja — S/ ${total.toFixed(2)}`
-                  : "Ingresa una cantidad"}
-              </button>
-            ) : null}
+            </div>
+
+            <div className="product-detail-note">
+              <p>¿Quieres agregar dedicatoria o coordinar entrega?</p>
+              <small>
+                Escríbenos por WhatsApp y afinamos el detalle. Porque regalar bonito no debería sentirse como llenar una declaración jurada.
+              </small>
+            </div>
           </div>
-        </div>
+        </section>
 
         {related.length > 0 && (
-          <section className="mt-16">
-            <h3 className="text-lg md:text-xl font-black text-foreground mb-6 tracking-tight">
-              Productos que complementan tu compra
-            </h3>
+          <section className="product-detail-related">
+            <h3>Más ideas para regalar</h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
+            <div className="product-detail-related-grid">
               {related.map((relatedProduct) => (
                 <ProductCard
                   key={relatedProduct.id}
                   product={relatedProduct}
+                  cart={cart}
                   onAddToCart={(item) => {
                     addToCart(item, 1);
-                    showNotification("¡Agregado!", item.title);
+                    showNotification("Agregado al pedido", item.title);
                   }}
                   onImageClick={(src, title) => setZoomImage({ src, title })}
                 />
@@ -715,11 +541,17 @@ const ProductDetailPage = () => {
         open={addModalOpen}
         product={product}
         currentQty={modalQty}
-        onClose={handleCloseAddModal}
+        onClose={() => setAddModalOpen(false)}
         onAddExtra={handleAddExtraFromModal}
-        onOpenCart={handleOpenCartFromModal}
-        secondaryActionLabel="Seguir acumulando"
-        onSecondaryAction={handleContinueAccumulating}
+        onOpenCart={() => {
+          setAddModalOpen(false);
+          setCartOpen(true);
+        }}
+        secondaryActionLabel="Seguir explorando"
+        onSecondaryAction={() => {
+          setAddModalOpen(false);
+          navigate("/catalogo");
+        }}
       />
 
       <ImageZoomModal
