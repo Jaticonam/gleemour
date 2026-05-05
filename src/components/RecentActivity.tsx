@@ -1,18 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
+import { BRAND_CONFIG } from "@/config/brand";
 import { Product } from "@/types/product";
 
 const NAMES = [
-  "María","Carmen","Rosa","Ana","Lucía","Patricia","Milagros","Diana","Katherine",
-  "Yessenia","Fiorella","Valeria","Andrea","Fernanda","Daniela","Paola","Alejandra",
-  "Claudia","Roxana","Verónica","Jessica","Carla","Tatiana","Brenda","Mayra","Noelia",
-  "Leslie","Nicole","Camila","Renata","Sofía","Maricielo","Gianella","Kiara"
+  "María","Carmen","Rosa","Ana","Lucía","Patricia","Milagros","Diana",
+  "Valeria","Andrea","Fernanda","Daniela","Alejandra","Claudia",
+  "Jessica","Camila","Sofía","Renata","Gianella","Kiara"
 ];
 
 const PLACES = [
-  "Lima","Callao","Miraflores","Surco","San Isidro","San Borja","La Molina",
-  "Los Olivos","San Juan de Lurigancho","Comas","Piura","Trujillo","Chiclayo",
-  "Arequipa","Cusco","Huancayo","Iquitos","Tarapoto"
+  "Tacna","Centro","Gregorio Albarracín","Pocollay","Alto de la Alianza",
+  "Ciudad Nueva"
 ];
 
 function random<T>(arr: T[]): T {
@@ -26,7 +25,12 @@ interface RecentActivityProps {
 export function RecentActivity({ products }: RecentActivityProps) {
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [data, setData] = useState({ name: "", place: "", product: "", time: 0 });
+  const [data, setData] = useState({
+    name: "",
+    place: "",
+    product: "",
+    time: 0,
+  });
 
   const timersRef = useRef<number[]>([]);
 
@@ -43,11 +47,13 @@ export function RecentActivity({ products }: RecentActivityProps) {
   const show = useCallback(() => {
     if (products.length === 0) return;
 
+    const product = random(products);
+
     setData({
       name: random(NAMES),
       place: random(PLACES),
-      product: random(products).title,
-      time: Math.floor(Math.random() * 15) + 2,
+      product: product.title,
+      time: Math.floor(Math.random() * 12) + 2,
     });
 
     setLeaving(false);
@@ -59,9 +65,9 @@ export function RecentActivity({ products }: RecentActivityProps) {
       schedule(() => {
         setVisible(false);
 
-        schedule(show, Math.floor(Math.random() * 30000) + 25000);
-      }, 500);
-    }, 6000);
+        schedule(show, Math.floor(Math.random() * 25000) + 20000);
+      }, 400);
+    }, 5500);
   }, [products, schedule]);
 
   useEffect(() => {
@@ -69,36 +75,34 @@ export function RecentActivity({ products }: RecentActivityProps) {
 
     if (products.length === 0) return;
 
-    schedule(show, 5000);
+    schedule(show, 4000);
 
-    return () => {
-      clearAllTimers();
-    };
+    return () => clearAllTimers();
   }, [products, show, schedule, clearAllTimers]);
 
   if (!visible) return null;
 
   return (
     <div
-      className={`fixed bottom-[calc(env(safe-area-inset-bottom)+25px)] left-5 z-[1000] ${
-        leaving ? "animate-slide-down" : "animate-slide-up"
+      className={`recent-activity ${
+        leaving ? "recent-activity-out" : "recent-activity-in"
       }`}
     >
-      <div className="bg-card shadow-2xl rounded-2xl p-4 border border-border flex items-center space-x-4 w-72">
-        <div className="bg-primary/10 h-12 w-12 rounded-xl flex items-center justify-center text-primary shrink-0">
-          <ShoppingBag className="w-6 h-6" />
+      <div className="recent-activity-card">
+        <div className="recent-activity-icon">
+          <ShoppingBag className="w-5 h-5" />
         </div>
-        <div className="text-left">
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
-            Compra Reciente
+
+        <div className="recent-activity-content">
+          <span>{BRAND_CONFIG.activity.label}</span>
+
+          <p>
+            <strong>{data.name}</strong> sorprendió en{" "}
+            <strong>{data.place}</strong> con{" "}
+            <em>{data.product}</em>
           </p>
-          <p className="text-xs font-bold text-foreground leading-snug">
-            <span className="text-primary">{data.name} de {data.place}</span> compró un{" "}
-            <span>{data.product}</span>
-          </p>
-          <p className="text-[10px] text-primary font-bold mt-0.5">
-            hace {data.time} minutos
-          </p>
+
+          <small>hace {data.time} minutos</small>
         </div>
       </div>
     </div>

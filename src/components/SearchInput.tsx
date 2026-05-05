@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { BRAND_CONFIG } from "@/config/brand";
 import type { Product } from "@/types/product";
 
 interface SearchInputProps {
@@ -14,7 +15,7 @@ export function SearchInput({
   value,
   onChange,
   products = [],
-  placeholder = "Busca productos, categorías o códigos...",
+  placeholder = BRAND_CONFIG.search.placeholder,
 }: SearchInputProps) {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -30,14 +31,22 @@ export function SearchInput({
         const title = p.title?.toLowerCase() ?? "";
         const id = p.id?.toLowerCase() ?? "";
         const category = p.category?.toLowerCase() ?? "";
+        const description = p.description?.toLowerCase() ?? "";
+        const occasion = p.occasion?.toLowerCase() ?? "";
+        const message = p.message?.toLowerCase() ?? "";
+        const highlight = p.highlight?.toLowerCase() ?? "";
 
         return (
           title.includes(term) ||
           id.includes(term) ||
-          category.includes(term)
+          category.includes(term) ||
+          description.includes(term) ||
+          occasion.includes(term) ||
+          message.includes(term) ||
+          highlight.includes(term)
         );
       })
-      .slice(0, 5);
+      .slice(0, 6);
   }, [value, products]);
 
   const goToProduct = (product: Product) => {
@@ -47,14 +56,20 @@ export function SearchInput({
     setActiveIndex(-1);
 
     navigate(`/catalogo/producto.html?id=${product.id}&cat=${product.category}`, {
-        state: {
+      state: {
         fromSearch: true,
         searchQuery: currentSearch,
-        },
+      },
     });
- };
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setActiveIndex(-1);
+      onChange("");
+      return;
+    }
+
     if (suggestions.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -71,23 +86,16 @@ export function SearchInput({
       );
     }
 
-    if (e.key === "Enter") {
-      if (activeIndex >= 0) {
-        e.preventDefault();
-        goToProduct(suggestions[activeIndex]);
-      }
-    }
-
-    if (e.key === "Escape") {
-      setActiveIndex(-1);
-      onChange("");
+    if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      goToProduct(suggestions[activeIndex]);
     }
   };
 
   return (
-    <div className="relative">
-      <div className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all focus-within:border-[#1d8299] focus-within:ring-4 focus-within:ring-[#1d8299]/10">
-        <Search className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-[#1d8299]" />
+    <div className="search-input-wrap">
+      <div className="search-input-box">
+        <Search className="search-input-icon" />
 
         <input
           type="text"
@@ -98,7 +106,7 @@ export function SearchInput({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+          className="search-input-field"
         />
 
         {hasValue && (
@@ -108,43 +116,39 @@ export function SearchInput({
               onChange("");
               setActiveIndex(-1);
             }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+            className="search-input-clear"
             aria-label="Limpiar búsqueda"
           >
-            <X className="h-4 w-4" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-[120] mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div className="search-suggestions">
           {suggestions.map((p, index) => (
             <button
               key={p.id}
               type="button"
               onMouseEnter={() => setActiveIndex(index)}
               onClick={() => goToProduct(p)}
-              className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
-                activeIndex === index ? "bg-slate-100" : "hover:bg-slate-50"
-              }`}
+              className={[
+                "search-suggestion-item",
+                activeIndex === index ? "search-suggestion-item-active" : "",
+              ].join(" ")}
             >
               <img
-                src={p.img}
+                src={p.img || "/placeholder.svg"}
                 alt={p.title}
                 loading="lazy"
-                className="h-10 w-10 shrink-0 rounded-xl bg-slate-100 object-cover"
               />
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-slate-700">
-                  {p.title}
-                </p>
-                <p className="truncate text-[11px] font-semibold text-slate-400">
-                  {p.category} · {p.id}
-                </p>
+              <div>
+                <p>{p.title}</p>
+                <span>{p.category} · {p.id}</span>
               </div>
 
-              <Search className="h-4 w-4 shrink-0 text-slate-300" />
+              <Sparkles className="search-suggestion-action" />
             </button>
           ))}
         </div>

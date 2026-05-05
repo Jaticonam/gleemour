@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, X, Package, Sparkles } from "lucide-react";
 import { Product } from "@/types/product";
+import { BRAND_CONFIG } from "@/config/brand";
 
 interface AddToCartModalProps {
   open: boolean;
@@ -45,7 +46,7 @@ export function AddToCartModal({
             </div>
 
             <div>
-              <h3>Detalle listo</h3>
+              <h3>{BRAND_CONFIG.modal.addedTitle}</h3>
               <p>{product.title}</p>
             </div>
           </div>
@@ -67,7 +68,7 @@ export function AddToCartModal({
           />
 
           <div>
-            <p>Ya tienes este detalle en tu pedido</p>
+            <p>{BRAND_CONFIG.modal.addedDescription}</p>
             <strong>
               {currentQty} unidad{currentQty !== 1 ? "es" : ""}
             </strong>
@@ -77,9 +78,9 @@ export function AddToCartModal({
         <div className="add-cart-modal-message">
           <Sparkles className="w-4 h-4" />
           <div>
-            <p>¿Quieres hacerlo más especial?</p>
+            <p>{BRAND_CONFIG.modal.questionTitle}</p>
             <span>
-              Puedes agregar una dedicatoria o coordinar entrega desde tu pedido.
+              {BRAND_CONFIG.modal.questionDescription}
             </span>
           </div>
         </div>
@@ -90,14 +91,14 @@ export function AddToCartModal({
             className="add-cart-modal-primary"
           >
             <Package className="w-4 h-4" />
-            Ver mi pedido
+            {BRAND_CONFIG.modal.primaryCta}
           </button>
 
           <button
             onClick={onSecondaryAction ?? onClose}
             className="add-cart-modal-secondary"
           >
-            {secondaryActionLabel ?? "Seguir explorando"}
+            {secondaryActionLabel ?? BRAND_CONFIG.modal.secondaryCta}
           </button>
         </div>
       </div>

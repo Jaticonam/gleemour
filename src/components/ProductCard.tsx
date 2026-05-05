@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   PlusCircle,
   CheckCircle,
@@ -10,9 +10,10 @@ import {
   Eye,
 } from "lucide-react";
 
+import { BRAND_CONFIG } from "@/config/brand";
 import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
 import { CartItem, Product } from "@/types/product";
-import { isProductAvailable } from "@/lib/products";
+import { getProductPrice, isProductAvailable } from "@/lib/products";
 
 interface ProductCardProps {
   product: Product;
@@ -21,10 +22,6 @@ interface ProductCardProps {
   onImageClick?: (src: string, title: string) => void;
 }
 
-const WHATSAPP_NUMBER = "51936188636";
-
-const getProductPrice = (product: Product) => product.price ?? product.price_1 ?? 0;
-
 const getEmotionalHint = (product: Product) => {
   if (product.highlight) return product.highlight;
   if (product.message) return product.message;
@@ -32,13 +29,13 @@ const getEmotionalHint = (product: Product) => {
 
   const category = product.category.toLowerCase();
 
-  if (category.includes("amar")) return "Para decirlo bonito, sin dar tantas vueltas.";
-  if (category.includes("agradecer")) return "Un gesto cálido para decir gracias.";
-  if (category.includes("celebrar")) return "Perfecto para hacer especial el momento.";
-  if (category.includes("acompa")) return "Cuando las palabras no alcanzan.";
+  if (category.includes("enamorar")) return "Para decirlo bonito, sin dar tantas vueltas.";
+  if (category.includes("especiales")) return "Ideal para fechas que no se pueden dejar pasar.";
   if (category.includes("sorprender")) return "Para llegar bonito y sin aviso.";
+  if (category.includes("celebrar")) return "Perfecto para hacer especial el momento.";
+  if (category.includes("agradecer")) return "Un gesto cálido para decir gracias.";
   if (category.includes("perdon") || category.includes("perdón")) return "Un detalle para abrir conversación.";
-  if (category.includes("premium")) return "Una opción más especial y elegante.";
+  if (category.includes("acompa")) return "Cuando las palabras no alcanzan.";
 
   return "Un detalle listo para sorprender.";
 };
@@ -82,20 +79,23 @@ export function ProductCard({
 
   const handleWhatsApp = () => {
     const statusText = isPreventa
-      ? "Hola, quiero consultar este detalle en preventa"
+      ? "Hola, quiero consultar este detalle"
       : isOutOfStock
       ? "Hola, quiero saber si pueden preparar nuevamente este detalle"
-      : "Hola, quiero pedir este detalle";
+      : "Hola, quiero enviar este detalle";
 
     const message =
       `${statusText}:%0A%0A` +
-      `Código: ${p.id}%0A` +
       `Producto: ${p.title}%0A` +
+      `Código: ${p.id}%0A` +
       `Categoría: ${p.category}%0A` +
       `Precio: S/ ${price.toFixed(2)}%0A%0A` +
-      `Quisiera coordinar disponibilidad, dedicatoria y entrega.`;
+      `Quisiera coordinar dedicatoria y entrega.`;
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+    window.open(
+      `https://wa.me/${BRAND_CONFIG.contact.whatsapp}?text=${message}`,
+      "_blank"
+    );
   };
 
   let stockText = "Disponible hoy";

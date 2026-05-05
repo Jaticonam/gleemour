@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, SearchX } from "lucide-react";
+
+import { BRAND_CONFIG } from "@/config/brand";
 import { useCart } from "@/hooks/use-cart";
 import { fetchProducts } from "@/lib/products";
 import { searchProducts } from "@/lib/search";
 import { sortByCommercialPriority } from "@/lib/sort";
-import { Product, CATEGORIES } from "@/types/product";
+import { Product } from "@/types/product";
+
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ProductCard } from "@/components/ProductCard";
@@ -37,6 +40,7 @@ const CategoryPage = () => {
     removeFromCart,
     changeQty,
     setExactQty,
+    setItemNote,
     totalItems,
     totalPrice,
     savings,
@@ -60,11 +64,15 @@ const CategoryPage = () => {
   }, [categoryId]);
 
   const activeCategory = categoryId || "todas";
-  const categoryInfo = CATEGORIES.find((c) => c.id === activeCategory);
+
+  const categoryInfo = BRAND_CONFIG.categories.find(
+    (category) => category.id === activeCategory
+  );
 
   const categoryProducts = useMemo(() => {
     if (activeCategory === "todas") return products;
-    return products.filter((p) => p.category === activeCategory);
+
+    return products.filter((product) => product.category === activeCategory);
   }, [products, activeCategory]);
 
   const filteredProducts = useMemo(() => {
@@ -72,33 +80,34 @@ const CategoryPage = () => {
 
     if (!term) return sortByCommercialPriority(categoryProducts);
 
-    const inside = searchProducts(categoryProducts, term);
+    const insideCategory = searchProducts(categoryProducts, term);
 
-    if (inside.length > 0) return sortByCommercialPriority(inside);
+    if (insideCategory.length > 0) {
+      return sortByCommercialPriority(insideCategory);
+    }
 
     return sortByCommercialPriority(searchProducts(products, term));
   }, [categoryProducts, products, categorySearch]);
 
-  const handleCategorySelect = useCallback((id: string) => {
-    if (id === "todas") {
-      navigate("/catalogo");
-    } else {
-      navigate(`/catalogo/categoria.html?cat=${id}`);
-    }
-  }, [navigate]);
+  const handleCategorySelect = useCallback(
+    (id: string) => {
+      if (id === "todas") {
+        navigate("/catalogo");
+      } else {
+        navigate(`/catalogo/categoria.html?cat=${encodeURIComponent(id)}`);
+      }
+    },
+    [navigate]
+  );
 
   const handleAddToCart = useCallback(
-    (p: Product) => {
-      addToCart(p, 1);
-      setSelectedProduct(p);
+    (product: Product) => {
+      addToCart(product, 1);
+      setSelectedProduct(product);
       setAddModalOpen(true);
     },
     [addToCart]
   );
-
-  const handleCloseAddModal = useCallback(() => {
-    setAddModalOpen(false);
-  }, []);
 
   const handleAddExtra = useCallback(
     (qty: number) => {
@@ -114,101 +123,113 @@ const CategoryPage = () => {
 
   const hasSearch = categorySearch.trim().length > 0;
 
+  if (loading) return <CategorySkeleton />;
+
   return (
-    <div className="min-h-screen bg-background pb-40">
-      <header className="sticky top-0 z-[100] w-full flex flex-col shadow-sm">
+    <div className="category-page">
+      <header className="category-page-header">
         <CountdownTimer />
 
-        <div className="bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 md:py-4">
-          <div className="max-w-7xl mx-auto flex flex-col gap-3">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-              {/* Bloque izquierda */}
-              <div className="flex items-center gap-3 min-w-0 md:shrink-0">
+        <div className="category-page-header-inner">
+          <div className="category-page-header-row">
+            <div className="category-page-title-wrap">
+              <button
+                type="button"
+                onClick={() => navigate("/catalogo")}
+                className="category-page-back"
+                aria-label="Volver al catálogo"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <div>
+                <h1>
+                  {categoryInfo
+                    ? `${categoryInfo.icon} ${categoryInfo.name}`
+                    : "Explorar detalles"}
+                </h1>
+
+                <p>
+                  {categoryInfo?.description ||
+                    "Encuentra el detalle ideal para sorprender."}
+                </p>
+
+                <span>
+                  {hasSearch
+                    ? `${filteredProducts.length} resultado${
+                        filteredProducts.length === 1 ? "" : "s"
+                      }`
+                    : `${categoryProducts.length} detalle${
+                        categoryProducts.length === 1 ? "" : "s"
+                      }`}
+                </span>
+              </div>
+            </div>
+
+            <div className="category-page-search">
+              <Search className="category-page-search-icon" />
+
+              <input
+                type="text"
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                placeholder={`Busca algo para ${
+                  categoryInfo?.name?.toLowerCase() || "sorprender"
+                }...`}
+              />
+
+              {hasSearch && (
                 <button
-                  onClick={() => navigate("/catalogo")}
-                  className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  type="button"
+                  onClick={() => setCategorySearch("")}
+                  aria-label="Limpiar búsqueda"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <SearchX className="w-4 h-4" />
                 </button>
-
-                <div className="min-w-0">
-                  <h1 className="text-lg md:text-xl font-black text-foreground truncate leading-tight">
-                    {categoryInfo ? `${categoryInfo.icon} ${categoryInfo.name}` : "Categoría"}
-                  </h1>
-
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    {hasSearch
-                      ? `${filteredProducts.length} resultado${filteredProducts.length === 1 ? "" : "s"}`
-                      : `${categoryProducts.length} productos`}
-                  </p>
-                </div>
-              </div>
-
-              {/* Buscador */}
-              <div className="relative flex-1 min-w-0">
-                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/70" />
-
-                <input
-                  type="text"
-                  value={categorySearch}
-                  onChange={(e) => setCategorySearch(e.target.value)}
-                  placeholder={`¿Qué buscas en ${categoryInfo?.name?.toLowerCase() || "esta categoría"}?`}
-                  className="w-full h-11 md:h-12 rounded-2xl bg-muted border border-transparent pl-11 pr-10 text-sm font-semibold text-foreground placeholder:text-muted-foreground/80 outline-none transition-all focus:bg-background focus:border-primary/20 focus:ring-4 focus:ring-primary/10"
-                />
-
-                {hasSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setCategorySearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Limpiar búsqueda"
-                  >
-                    <SearchX className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 md:px-4 mt-6 md:mt-8">
+      <main className="category-page-main">
         <CategoryFilter
-          categories={CATEGORIES}
+          categories={BRAND_CONFIG.categories}
           active={activeCategory}
           onSelect={handleCategorySelect}
         />
 
-        {loading ? (
-          <CategorySkeleton />
-        ) : filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <div className="bg-muted p-6 rounded-full mb-4">
-              <SearchX className="w-10 h-10 opacity-30" />
+        {filteredProducts.length === 0 ? (
+          <div className="category-page-empty">
+            <div>
+              <SearchX className="w-10 h-10" />
             </div>
 
-            <p className="font-black text-sm tracking-widest text-center">
+            <p>
               {hasSearch
-                ? "No encontramos resultados en esta categoría"
-                : "Sin productos en esta categoría"}
+                ? "Ups… no encontramos algo así aquí"
+                : "Aún no hay detalles en esta categoría"}
             </p>
+
+            <small>
+              Prueba con otra categoría o explora todo el catálogo.
+            </small>
 
             {hasSearch && (
               <button
                 type="button"
                 onClick={() => setCategorySearch("")}
-                className="mt-4 px-4 py-2 rounded-xl bg-muted text-foreground text-sm font-bold hover:bg-muted/80 transition-colors"
               >
                 Limpiar búsqueda
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-6 px-2 md:px-0">
-            {filteredProducts.map((p) => (
+          <div className="category-page-grid">
+            {filteredProducts.map((product) => (
               <ProductCard
-                key={p.id}
-                product={p}
+                key={product.id}
+                product={product}
                 cart={cart}
                 onAddToCart={handleAddToCart}
                 onImageClick={(src, title) => setZoomImage({ src, title })}
@@ -218,7 +239,10 @@ const CategoryPage = () => {
         )}
       </main>
 
-      <FloatingButtons cartCount={totalItems} onCartClick={() => setCartOpen(true)} />
+      <FloatingButtons
+        cartCount={totalItems}
+        onCartClick={() => setCartOpen(true)}
+      />
 
       <RecentActivity products={products} />
 
@@ -232,6 +256,7 @@ const CategoryPage = () => {
         onRemove={removeFromCart}
         onChangeQty={changeQty}
         onSetQty={setExactQty}
+        onChangeNote={setItemNote}
       />
 
       <ImageZoomModal
@@ -244,7 +269,7 @@ const CategoryPage = () => {
         open={addModalOpen}
         product={selectedProduct}
         currentQty={currentQtyInCart}
-        onClose={handleCloseAddModal}
+        onClose={() => setAddModalOpen(false)}
         onAddExtra={handleAddExtra}
         onOpenCart={() => {
           setAddModalOpen(false);

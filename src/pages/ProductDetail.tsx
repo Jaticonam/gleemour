@@ -29,12 +29,8 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/skeletons/ProductSkeleton";
 import { AddToCartModal } from "@/components/AddToCartModal";
-
-const WHATSAPP_NUMBER = "51936188636";
-
-const getProductPrice = (product: Product) => {
-  return product.price ?? product.price_1 ?? 0;
-};
+import { BRAND_CONFIG } from "@/config/brand";
+import { getProductPrice } from "@/lib/products";
 
 const ProductDetailPage = () => {
   const { id: paramId } = useParams<{ id: string }>();
@@ -236,20 +232,28 @@ const ProductDetailPage = () => {
     if (!product) return;
 
     const statusText = isPreventa
-      ? "Quiero consultar este detalle en preventa"
+      ? BRAND_CONFIG.productCard?.whatsappPreventa ||
+        "Quiero consultar este detalle"
       : isOutOfStock
-      ? "Quiero saber si pueden preparar nuevamente este detalle"
-      : "Hola, quiero pedir este detalle";
+      ? BRAND_CONFIG.productCard?.whatsappRestock ||
+        "Quiero saber si pueden preparar nuevamente este detalle"
+      : BRAND_CONFIG.productCard?.whatsappDefault ||
+        "Hola, quiero enviar este detalle";
 
-    const message =
-      `${statusText}:%0A%0A` +
-      `Código: ${product.id}%0A` +
-      `Producto: ${product.title}%0A` +
-      `Precio: S/ ${productPrice.toFixed(2)}%0A` +
-      `Cantidad: ${effectiveQty}%0A%0A` +
-      `Quisiera coordinar disponibilidad, dedicatoria y entrega.`;
+    let message = `${statusText}:\n\n`;
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+    message += `Producto: ${product.title}\n`;
+    message += `Código: ${product.id}\n`;
+    message += `Precio: S/ ${productPrice.toFixed(2)}\n`;
+    message += `Cantidad: ${effectiveQty}\n\n`;
+
+    message += BRAND_CONFIG.checkout.closing;
+
+    const url = `https://wa.me/${BRAND_CONFIG.contact.whatsapp}?text=${encodeURIComponent(
+      message
+    )}`;
+
+    window.open(url, "_blank");
   }, [product, productPrice, effectiveQty, isPreventa, isOutOfStock]);
 
   let stockText = "Próximo detalle";
@@ -491,10 +495,8 @@ const ProductDetailPage = () => {
             </div>
 
             <div className="product-detail-note">
-              <p>¿Quieres agregar dedicatoria o coordinar entrega?</p>
-              <small>
-                Escríbenos por WhatsApp y afinamos el detalle. Porque regalar bonito no debería sentirse como llenar una declaración jurada.
-              </small>
+              <p>{BRAND_CONFIG.modal.questionTitle}</p>
+              <small>{BRAND_CONFIG.modal.questionDescription}</small>
             </div>
           </div>
         </section>

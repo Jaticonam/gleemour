@@ -1,4 +1,5 @@
 import { SearchInput } from "@/components/SearchInput";
+import { BRAND_CONFIG } from "@/config/brand";
 import type { Product } from "@/types/product";
 
 interface HeaderBarProps {
@@ -7,30 +8,32 @@ interface HeaderBarProps {
   products?: Product[];
 }
 
-const LOGO_URL =
-  "https://dl.dropboxusercontent.com/scl/fi/pnsqsg5o0v9sce32wi0n5/Logo_Wooly.png?rlkey=jjfdddx66emkv2rdh9dp4kosd&st=xbp3j3ks&raw=1";
-
 export function HeaderBar({
   searchQuery,
   onSearchChange,
   products = [],
 }: HeaderBarProps) {
   return (
-    <div className="border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl md:py-4">
-      <div className="mx-auto flex max-w-7xl items-center gap-4">
-        <div
-          className="shrink-0 cursor-pointer"
-          onClick={() => window.location.reload()}
+    <div className="catalog-header-bar">
+      <div className="catalog-header-bar-inner">
+        <button
+          type="button"
+          className="catalog-header-logo"
+          onClick={() => (window.location.href = "/")}
+          aria-label={`Ir al inicio de ${BRAND_CONFIG.name}`}
         >
-          <img src={LOGO_URL} alt="Wooly" className="h-8 w-auto md:h-9" />
-        </div>
+          <img
+            src={BRAND_CONFIG.assets.logo}
+            alt={BRAND_CONFIG.name}
+          />
+        </button>
 
-        <div className="flex-1">
+        <div className="catalog-header-search">
           <SearchInput
             value={searchQuery}
             onChange={onSearchChange}
             products={products}
-            placeholder="Busca flores, cajas, peluches o código..."
+            placeholder={BRAND_CONFIG.search.placeholder}
           />
         </div>
       </div>
