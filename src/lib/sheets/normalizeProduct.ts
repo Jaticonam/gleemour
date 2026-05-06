@@ -1,5 +1,4 @@
-import type { Product } from "@/types/product";
-import type { SheetCategory } from "./sheetsConfig";
+import type { Addon, Product } from "@/types/product";
 
 type CsvRow = Record<string, string>;
 
@@ -10,8 +9,19 @@ export interface SheetProduct extends Product {
   updated_at: string;
 }
 
+export interface SheetAddon extends Addon {}
+
 function cleanText(value: unknown): string {
   return String(value ?? "").trim();
+}
+
+function slugify(value: unknown): string {
+  return cleanText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "");
 }
 
 function parseNumber(value: unknown): number | null {
@@ -29,52 +39,51 @@ function parseRequiredNumber(value: unknown): number {
   return parseNumber(value) ?? 0;
 }
 
-function parseBadges(value: unknown): string[] {
+function parsePipeList(value: unknown): string[] {
   return cleanText(value)
     .split("|")
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
-function mapCategoryToGleemour(category: string): string {
-  const cat = cleanText(category).toLowerCase();
-
-  if (cat.includes("flores")) return "para-enamorar";
-  if (cat.includes("peluche")) return "para-sorprender";
-  if (cat.includes("globos")) return "para-celebrar";
-  if (cat.includes("cajas")) return "para-agradecer";
-  if (cat.includes("papel")) return "momentos-especiales";
-  if (cat.includes("cintas")) return "para-celebrar";
-  if (cat.includes("accesorios")) return "para-sorprender";
-  if (cat.includes("hotwheels")) return "para-sorprender";
-
-  return "para-sorprender";
+function parseCategories(value: unknown): string[] {
+  return parsePipeList(value).map(slugify).filter(Boolean);
 }
 
-export function normalizeProduct(
-  row: CsvRow,
-  categoryFromConfig: SheetCategory
-): SheetProduct {
+function parseBadges(value: unknown): string[] {
+  return parsePipeList(value);
+}
+
+function parseAddons(value: unknown): string[] {
+  return parsePipeList(value);
+}
+
+export function normalizeProduct(row: CsvRow): SheetProduct {
+  const categories = parseCategories(row.category);
+  const category = categories[0] || "";
+
   const price = parseRequiredNumber(row.price || row.price_1);
-  const mappedCategory = mapCategoryToGleemour(categoryFromConfig);
+  const offerPrice = parseNumber(row.offer_price);
 
   return {
     id: cleanText(row.id),
     title: cleanText(row.title),
     description: cleanText(row.description),
 
-    // ✅ Categoría emocional Gleemour
-    category: mappedCategory,
+    category,
+    categories,
 
-    // ✅ Precio principal Gleemour
     price,
+    offer_price: offerPrice,
 
-    // ⚠️ Compatibilidad temporal Wooly
+    // Compatibilidad temporal
     price_1: price,
-    price_3: parseNumber(row.price_3),
-    price_12: parseNumber(row.price_12),
-    price_50: parseNumber(row.price_50),
-    price_100: parseNumber(row.price_100),
+    price_3: null,
+    price_12: null,
+    price_50: null,
+    price_100: null,
+
+    addons: parseAddons(row.addons),
 
     stock: parseNumber(row.stock),
     img: cleanText(row.img),
@@ -83,9 +92,20 @@ export function normalizeProduct(
     status: cleanText(row.status),
     updated_at: cleanText(row.updated_at),
 
-    // ✅ Campos emocionales futuros
     occasion: cleanText(row.occasion),
     message: cleanText(row.message),
     highlight: cleanText(row.highlight),
+  };
+}
+
+export function normalizeAddon(row: CsvRow): SheetAddon {
+  return {
+    id: cleanText(row.id),
+    title: cleanText(row.title),
+    price: parseRequiredNumber(row.price),
+    img: cleanText(row.img),
+    category: slugify(row.category),
+    status: cleanText(row.status),
+    priority: parseRequiredNumber(row.priority),
   };
 }

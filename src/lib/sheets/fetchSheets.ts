@@ -1,26 +1,37 @@
-import type { Product } from "@/types/product";
+import type { Addon, Product } from "@/types/product";
 import { SHEETS_CONFIG, type SheetSource } from "./sheetsConfig";
-import { normalizeProduct } from "./normalizeProduct";
+import { normalizeAddon, normalizeProduct } from "./normalizeProduct";
 import { validateProducts } from "./validateProducts";
 
 type CsvRow = Record<string, string>;
 
-const REQUIRED_HEADERS = [
+const PRODUCT_REQUIRED_HEADERS = [
   "id",
   "title",
   "description",
   "category",
-  "price_1",
-  "price_3",
-  "price_12",
-  "price_50",
-  "price_100",
+  "price",
+  "offer_price",
+  "addons",
   "stock",
   "img",
+  "status",
   "badge",
   "priority",
-  "status",
+  "occasion",
+  "message",
+  "highlight",
   "updated_at",
+] as const;
+
+const ADDON_REQUIRED_HEADERS = [
+  "id",
+  "title",
+  "price",
+  "img",
+  "category",
+  "status",
+  "priority",
 ] as const;
 
 function parseCSVLine(line: string): string[] {
@@ -66,7 +77,7 @@ function parseCSV(text: string): { headers: string[]; rows: CsvRow[] } {
     return { headers: [], rows: [] };
   }
 
-  const headers = parseCSVLine(lines[0]).map((h) => h.trim());
+  const headers = parseCSVLine(lines[0]).map((header) => header.trim());
 
   const rows = lines.slice(1).map((line) => {
     const values = parseCSVLine(line);
@@ -82,59 +93,78 @@ function parseCSV(text: string): { headers: string[]; rows: CsvRow[] } {
   return { headers, rows };
 }
 
-function validateHeaders(headers: string[], source: SheetSource) {
-  const normalizedHeaders = headers.map((h) => h.trim().toLowerCase());
+function getMeaningfulRows(rows: CsvRow[]) {
+  return rows.filter((row) =>
+    Object.values(row).some((value) => (value ?? "").trim() !== "")
+  );
+}
 
-  const missing = REQUIRED_HEADERS.filter(
+function validateHeaders(
+  headers: string[],
+  requiredHeaders: readonly string[],
+  sourceName: string,
+  source: SheetSource
+) {
+  const normalizedHeaders = headers.map((header) =>
+    header.trim().toLowerCase()
+  );
+
+  const missing = requiredHeaders.filter(
     (required) => !normalizedHeaders.includes(required.toLowerCase())
   );
 
   if (missing.length > 0) {
     throw new Error(
-      `La hoja category="${source.category}" docId="${source.docId}" gid="${source.gid}" no cumple el schema. Faltan columnas: ${missing.join(", ")}`
+      `La hoja "${sourceName}" docId="${source.docId}" gid="${source.gid}" no cumple el schema. Faltan columnas: ${missing.join(
+        ", "
+      )}`
     );
   }
 }
 
-async function loadCategoryProducts(source: SheetSource) {
+async function loadSheetRows(
+  sourceName: keyof typeof SHEETS_CONFIG
+): Promise<CsvRow[]> {
+  const source = SHEETS_CONFIG[sourceName];
+
   const url = `https://docs.google.com/spreadsheets/d/${source.docId}/export?format=csv&gid=${source.gid}`;
 
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `Error cargando category="${source.category}" docId="${source.docId}" gid="${source.gid}": HTTP ${res.status}`
+      `Error cargando hoja "${sourceName}" docId="${source.docId}" gid="${source.gid}": HTTP ${response.status}`
     );
   }
 
-  const csvText = await res.text();
+  const csvText = await response.text();
   const { headers, rows } = parseCSV(csvText);
 
-  validateHeaders(headers, source);
-
-  const meaningfulRows = rows.filter((row) =>
-    Object.values(row).some((value) => (value ?? "").trim() !== "")
+  validateHeaders(
+    headers,
+    sourceName === "products" ? PRODUCT_REQUIRED_HEADERS : ADDON_REQUIRED_HEADERS,
+    sourceName,
+    source
   );
 
-  const normalized = meaningfulRows.map((row) =>
-    normalizeProduct(row, source.category)
-  );
-
-  return validateProducts(normalized);
+  return getMeaningfulRows(rows);
 }
 
 export async function loadAllProducts(): Promise<Product[]> {
-  const results = await Promise.all(
-    SHEETS_CONFIG.map((source) =>
-      loadCategoryProducts(source).catch((error) => {
-        console.error(`Error en fuente "${source.category}":`, error);
-        return [];
-      })
-    )
-  );
+  const rows = await loadSheetRows("products");
 
-  return results
-    .flat()
+  const normalized = rows.map(normalizeProduct);
+
+  return validateProducts(normalized)
     .sort((a, b) => b.priority - a.priority)
     .map(({ updated_at, ...product }) => product);
+}
+
+export async function loadAllAddons(): Promise<Addon[]> {
+  const rows = await loadSheetRows("addons");
+
+  return rows
+    .map(normalizeAddon)
+    .filter((addon) => addon.status.trim().toLowerCase() === "publicado")
+    .sort((a, b) => b.priority - a.priority);
 }

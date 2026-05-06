@@ -1,3 +1,4 @@
+import type { Product } from "@/types/product";
 import { BRAND_CONFIG } from "@/config/brand";
 
 const CACHE_KEY = `${BRAND_CONFIG.slug}_products_cache`;
@@ -42,18 +43,27 @@ function setCache(data: Product[], source: CacheEntry["source"]) {
   }
 }
 
-function ensureGleemourProduct(product: Product): Product {
+function ensureCatalogProduct(product: Product): Product {
   const price = product.price ?? product.price_1 ?? 0;
 
   return {
     ...product,
+
+    // Precio base
     price,
-    price_1: product.price_1 ?? price,
+
+    // Compatibilidad temporal con estructura antigua
+    price_1: price,
+
+    // Nuevo sistema
+    offer_price: product.offer_price ?? null,
+    categories: product.categories ?? [product.category].filter(Boolean),
+    addons: product.addons ?? [],
   };
 }
 
 function normalizeProducts(products: Product[]): Product[] {
-  return products.map(ensureGleemourProduct);
+  return products.map(ensureCatalogProduct);
 }
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -98,15 +108,43 @@ export function clearProductsCache() {
 }
 
 export function getProductPrice(product: Product): number {
+  return product.offer_price ?? product.price ?? product.price_1 ?? 0;
+}
+
+export function getOriginalProductPrice(product: Product): number {
   return product.price ?? product.price_1 ?? 0;
 }
 
+export function hasOfferPrice(product: Product): boolean {
+  const originalPrice = getOriginalProductPrice(product);
+  const offerPrice = product.offer_price ?? null;
+
+  return (
+    offerPrice !== null &&
+    Number.isFinite(offerPrice) &&
+    offerPrice > 0 &&
+    originalPrice > 0 &&
+    offerPrice < originalPrice
+  );
+}
+
 export function getEffectivePrice(item: Product & { qty: number }): number {
-  return item.price ?? item.price_1 ?? 0;
+  return getProductPrice(item);
 }
 
 export function getMinPrice(product: Product): number {
   return getProductPrice(product);
+}
+
+export function productBelongsToCategory(
+  product: Product,
+  categoryId: string
+): boolean {
+  if (categoryId === "todas") return true;
+
+  const categories = product.categories ?? [product.category].filter(Boolean);
+
+  return categories.includes(categoryId);
 }
 
 export function isProductAvailable(product: Product): boolean {

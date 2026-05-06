@@ -4,55 +4,60 @@ function normalizeStatus(status: string): string {
   return status.trim().toLowerCase();
 }
 
+function hasValidPrice(product: SheetProduct): boolean {
+  const price = product.offer_price ?? product.price;
+  return Number.isFinite(price) && price > 0;
+}
+
 export function validateProducts(products: SheetProduct[]): SheetProduct[] {
   const seen = new Set<string>();
-  const allowedStatuses = new Set(["publicado", "preventa"]);
 
-  return products.filter((p) => {
-    const status = normalizeStatus(p.status);
+  // Solo estos se muestran en la web
+  const visibleStatuses = new Set(["publicado", "preventa"]);
 
-    if (!p.id) {
+  return products.filter((product) => {
+    const status = normalizeStatus(product.status);
+
+    if (!product.id) {
       console.warn("Producto descartado: sin id", {
-        title: p.title,
-        status: p.status,
+        title: product.title,
+        status: product.status,
       });
       return false;
     }
 
-    if (seen.has(p.id)) {
-      console.warn("Producto descartado: id duplicado ->", p.id);
+    if (seen.has(product.id)) {
+      console.warn("Producto descartado: id duplicado ->", product.id);
       return false;
     }
 
-    if (!p.title) {
-      console.warn("Producto descartado: sin title ->", p.id);
+    if (!product.title) {
+      console.warn("Producto descartado: sin title ->", product.id);
       return false;
     }
 
-    // Solo leemos productos con status permitido
-    if (!allowedStatuses.has(status)) {
+    if (!visibleStatuses.has(status)) {
       return false;
     }
 
-    // Publicado: debe estar listo para vender
     if (status === "publicado") {
-      if (Number.isNaN(p.price_1) || p.price_1 <= 0) {
-        console.warn("Producto publicado descartado: price_1 inválido ->", p.id);
+      if (!hasValidPrice(product)) {
+        console.warn("Producto publicado descartado: precio inválido ->", product.id);
         return false;
       }
 
-      if (!p.img) {
-        console.warn("Producto publicado descartado: sin imagen ->", p.id);
+      if (!product.img) {
+        console.warn("Producto publicado descartado: sin imagen ->", product.id);
+        return false;
+      }
+
+      if (!product.categories || product.categories.length === 0) {
+        console.warn("Producto publicado descartado: sin categoría ->", product.id);
         return false;
       }
     }
 
-    // Preventa: puede entrar con información parcial
-    if (status === "preventa") {
-      // Solo exigimos id + title, ya validados arriba.
-    }
-
-    seen.add(p.id);
+    seen.add(product.id);
     return true;
   });
 }

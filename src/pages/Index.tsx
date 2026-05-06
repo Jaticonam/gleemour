@@ -6,7 +6,8 @@ import { useCart } from "@/hooks/use-cart";
 import { fetchProducts } from "@/lib/products";
 import { searchProducts } from "@/lib/search";
 import { sortByCommercialPriority } from "@/lib/sort";
-import { Product, CATEGORIES } from "@/types/product";
+import { Product } from "@/types/product";
+import { BRAND_CONFIG } from "@/config/brand";
 
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { HeaderBar } from "@/components/HeaderBar";
@@ -185,7 +186,7 @@ const Index = () => {
         </section>
 
         <CategoryFilter
-          categories={CATEGORIES}
+          categories={BRAND_CONFIG.categories}
           active={activeCategory}
           onSelect={handleCategorySelect}
         />
