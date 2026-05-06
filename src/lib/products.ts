@@ -10,7 +10,7 @@ const catalogCache = createCatalogCache<Product>(
   CACHE_KEY,
   CACHE_DURATION
 );
-
+  
 /**
  * Obtiene catálogo desde Google Sheets.
  */
