@@ -1,20 +1,30 @@
 import type { Addon, Product } from "@/types/product";
+import { getCategoryIdFromSheetLabel } from "@/config/categories";
 
 type CsvRow = Record<string, string>;
 
-export interface SheetProduct extends Product {
-  badges: string[];
-  priority: number;
-  status: string;
-  updated_at: string;
-}
+/**
+ * Producto normalizado desde Google Sheets.
+ * Debe cumplir el contrato final del frontend.
+ */
+export type SheetProduct = Product;
 
-export interface SheetAddon extends Addon {}
+/**
+ * Addon normalizado desde Google Sheets.
+ */
+export type SheetAddon = Addon;
 
+/**
+ * Limpia textos provenientes de Sheets.
+ */
 function cleanText(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+/**
+ * Convierte texto visible en id técnico.
+ * Ejemplo: "Para enamorar" -> "para-enamorar"
+ */
 function slugify(value: unknown): string {
   return cleanText(value)
     .toLowerCase()
@@ -24,10 +34,12 @@ function slugify(value: unknown): string {
     .replace(/[^\w-]+/g, "");
 }
 
+/**
+ * Convierte valores numéricos de Sheets.
+ * Soporta coma decimal.
+ */
 function parseNumber(value: unknown): number | null {
-  const cleaned = cleanText(value)
-    .replace(/\s/g, "")
-    .replace(",", ".");
+  const cleaned = cleanText(value).replace(/\s/g, "").replace(",", ".");
 
   if (!cleaned) return null;
 
@@ -35,10 +47,18 @@ function parseNumber(value: unknown): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
+/**
+ * Número obligatorio.
+ * Si está vacío o inválido, devuelve 0.
+ */
 function parseRequiredNumber(value: unknown): number {
   return parseNumber(value) ?? 0;
 }
 
+/**
+ * Convierte listas separadas por "|".
+ * Ejemplo: "Nuevo|Oferta" -> ["Nuevo", "Oferta"]
+ */
 function parsePipeList(value: unknown): string[] {
   return cleanText(value)
     .split("|")
@@ -46,58 +66,75 @@ function parsePipeList(value: unknown): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Normaliza categorías adicionales.
+ * Ejemplo: "momentos-especiales|para-sorprender"
+ */
 function parseCategories(value: unknown): string[] {
-  return parsePipeList(value).map(slugify).filter(Boolean);
+  return parsePipeList(value)
+    .map(getCategoryIdFromSheetLabel)
+    .filter(Boolean);
 }
 
+/**
+ * Normaliza badges comerciales.
+ */
 function parseBadges(value: unknown): string[] {
   return parsePipeList(value);
 }
 
+/**
+ * Normaliza addons permitidos para el producto.
+ */
 function parseAddons(value: unknown): string[] {
-  return parsePipeList(value);
+  return parsePipeList(value).map(slugify).filter(Boolean);
 }
 
+/**
+ * Normaliza un producto desde una fila de Google Sheets.
+ *
+ * Regla:
+ * category   = categoría principal
+ * categories = categorías adicionales
+ */
 export function normalizeProduct(row: CsvRow): SheetProduct {
-  const categories = parseCategories(row.category);
-  const category = categories[0] || "";
+  const primaryCategory = getCategoryIdFromSheetLabel(row.category);
+  const extraCategories = parseCategories(row.categories);
 
-  const price = parseRequiredNumber(row.price || row.price_1);
-  const offerPrice = parseNumber(row.offer_price);
+  const categories = Array.from(
+    new Set([primaryCategory, ...extraCategories].filter(Boolean))
+  );
 
   return {
     id: cleanText(row.id),
     title: cleanText(row.title),
     description: cleanText(row.description),
 
-    category,
+    category: primaryCategory,
     categories,
 
-    price,
-    offer_price: offerPrice,
-
-    // Compatibilidad temporal
-    price_1: price,
-    price_3: null,
-    price_12: null,
-    price_50: null,
-    price_100: null,
+    price: parseRequiredNumber(row.price),
+    offer_price: parseNumber(row.offer_price),
 
     addons: parseAddons(row.addons),
 
     stock: parseNumber(row.stock),
     img: cleanText(row.img),
+
+    status: cleanText(row.status),
     badges: parseBadges(row.badge),
     priority: parseRequiredNumber(row.priority),
-    status: cleanText(row.status),
-    updated_at: cleanText(row.updated_at),
 
     occasion: cleanText(row.occasion),
     message: cleanText(row.message),
     highlight: cleanText(row.highlight),
+    updated_at: cleanText(row.updated_at),
   };
 }
 
+/**
+ * Normaliza un addon desde una fila de Google Sheets.
+ */
 export function normalizeAddon(row: CsvRow): SheetAddon {
   return {
     id: cleanText(row.id),

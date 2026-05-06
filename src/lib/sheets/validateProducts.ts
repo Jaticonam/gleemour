@@ -1,28 +1,44 @@
+import { CATEGORIES } from "@/config/categories";
+import { isVisibleProductStatus } from "@/config/statuses";
 import type { SheetProduct } from "./normalizeProduct";
 
-function normalizeStatus(status: string): string {
-  return status.trim().toLowerCase();
+const CATEGORY_IDS = new Set(CATEGORIES.map((category) => category.id));
+
+function hasValidBasePrice(product: SheetProduct): boolean {
+  return Number.isFinite(product.price) && product.price > 0;
 }
 
-function hasValidPrice(product: SheetProduct): boolean {
-  const price = product.offer_price ?? product.price;
-  return Number.isFinite(price) && price > 0;
+function hasValidImage(product: SheetProduct): boolean {
+  return product.img.trim() !== "";
+}
+
+function getInvalidCategories(product: SheetProduct): string[] {
+  if (!product.category) return ["category vacío"];
+  if (!product.categories || product.categories.length === 0) {
+    return ["categories vacío"];
+  }
+
+  return product.categories.filter((categoryId) => !CATEGORY_IDS.has(categoryId));
+}
+
+function hasInvalidOffer(product: SheetProduct): boolean {
+  if (product.offer_price === null) return false;
+
+  return (
+    !Number.isFinite(product.offer_price) ||
+    product.offer_price <= 0 ||
+    product.offer_price >= product.price
+  );
 }
 
 export function validateProducts(products: SheetProduct[]): SheetProduct[] {
   const seen = new Set<string>();
 
-  // Solo estos se muestran en la web
-  const visibleStatuses = new Set(["publicado", "preventa"]);
-
   return products.filter((product) => {
-    const status = normalizeStatus(product.status);
+    const status = product.status.trim();
 
     if (!product.id) {
-      console.warn("Producto descartado: sin id", {
-        title: product.title,
-        status: product.status,
-      });
+      console.warn("Producto descartado: sin id", product);
       return false;
     }
 
@@ -36,25 +52,51 @@ export function validateProducts(products: SheetProduct[]): SheetProduct[] {
       return false;
     }
 
-    if (!visibleStatuses.has(status)) {
+    if (!isVisibleProductStatus(status)) {
       return false;
     }
 
-    if (status === "publicado") {
-      if (!hasValidPrice(product)) {
-        console.warn("Producto publicado descartado: precio inválido ->", product.id);
-        return false;
-      }
+    const invalidCategories = getInvalidCategories(product);
 
-      if (!product.img) {
-        console.warn("Producto publicado descartado: sin imagen ->", product.id);
-        return false;
-      }
+    if (invalidCategories.length > 0) {
+      console.warn("Producto descartado: categoría inválida ->", {
+        id: product.id,
+        title: product.title,
+        category: product.category,
+        categories: product.categories,
+        invalidCategories,
+        validCategories: CATEGORIES.map((category) => category.sheetLabel),
+      });
 
-      if (!product.categories || product.categories.length === 0) {
-        console.warn("Producto publicado descartado: sin categoría ->", product.id);
-        return false;
-      }
+      return false;
+    }
+
+    if (!hasValidBasePrice(product)) {
+      console.warn("Producto descartado: precio base inválido ->", {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+      });
+      return false;
+    }
+
+    if (hasInvalidOffer(product)) {
+      console.warn("Producto con oferta inválida. Se mantiene precio base ->", {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        offer_price: product.offer_price,
+      });
+
+      product.offer_price = null;
+    }
+
+    if (!hasValidImage(product)) {
+      console.warn("Producto descartado: sin imagen ->", {
+        id: product.id,
+        title: product.title,
+      });
+      return false;
     }
 
     seen.add(product.id);

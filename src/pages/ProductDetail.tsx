@@ -11,13 +11,20 @@ import {
   Plus,
   Share2,
   MessageCircle,
+  Heart,
 } from "lucide-react";
 
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
 import { useCart } from "@/hooks/use-cart";
-import { fetchProducts, isProductAvailable } from "@/lib/products";
+import {
+  fetchProducts,
+  isProductAvailable,
+  getProductPrice,
+  getOriginalProductPrice,
+  hasOfferPrice,
+} from "@/lib/products";
 import { Product } from "@/types/product";
 
 import { FloatingButtons } from "@/components/FloatingButtons";
@@ -30,7 +37,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/skeletons/ProductSkeleton";
 import { AddToCartModal } from "@/components/AddToCartModal";
 import { BRAND_CONFIG } from "@/config/brand";
-import { getProductPrice } from "@/lib/products";
+import { getCategoryName } from "@/config/categories";
 
 const ProductDetailPage = () => {
   const { id: paramId } = useParams<{ id: string }>();
@@ -94,11 +101,22 @@ const ProductDetailPage = () => {
   );
 
   const available = product ? isProductAvailable(product) : false;
-  const isPreventa = (product?.status || "").trim().toLowerCase() === "preventa";
-  const productPrice = product ? getProductPrice(product) : 0;
 
+  const isPreventa =
+    (product?.status || "").trim().toLowerCase() === "preventa";
+  const originalPrice = product
+    ? getOriginalProductPrice(product)
+    : 0;
+  const finalPrice = product
+    ? getProductPrice(product)
+    : 0;
+
+  const hasOffer = product
+    ? hasOfferPrice(product)
+    : false;
+    
   const isOutOfStock =
-    !!product && !isPreventa && productPrice > 0 && product.stock === 0;
+    !!product && !isPreventa && finalPrice > 0 && product.stock === 0;
 
   const currentCartQty = useMemo(() => {
     if (!product) return 0;
@@ -112,7 +130,7 @@ const ProductDetailPage = () => {
 
   const isQtyInputValid = parsedQtyInput !== null && parsedQtyInput >= 1;
   const effectiveQty = isQtyInputValid ? parsedQtyInput : qty;
-  const total = productPrice * effectiveQty;
+  const total = finalPrice * effectiveQty;
 
   const related = useMemo(() => {
     if (!product) return [];
@@ -160,10 +178,8 @@ const ProductDetailPage = () => {
       return;
     }
 
-    const safeQty = Math.floor(parsed);
-    setQty(safeQty);
-    setQtyInput(String(safeQty));
-  }, [qtyInput]);
+    updateQty(parsed);
+  }, [qtyInput, updateQty]);
 
   const handleQtyInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -244,7 +260,7 @@ const ProductDetailPage = () => {
 
     message += `Producto: ${product.title}\n`;
     message += `Código: ${product.id}\n`;
-    message += `Precio: S/ ${productPrice.toFixed(2)}\n`;
+    message += `Precio: S/ ${finalPrice.toFixed(2)}\n`;
     message += `Cantidad: ${effectiveQty}\n\n`;
 
     message += BRAND_CONFIG.checkout.closing;
@@ -253,8 +269,8 @@ const ProductDetailPage = () => {
       message
     )}`;
 
-    window.open(url, "_blank");
-  }, [product, productPrice, effectiveQty, isPreventa, isOutOfStock]);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [product, finalPrice, effectiveQty, isPreventa, isOutOfStock]);
 
   let stockText = "Próximo detalle";
   let stockClass = "product-detail-status-muted";
@@ -265,7 +281,12 @@ const ProductDetailPage = () => {
       stockText = "Disponible en preventa";
       stockClass = "product-detail-status-preorder";
       StockIcon = Clock;
-    } else if (!productPrice || productPrice <= 0 || product.stock === null || product.stock === undefined) {
+    } else if (
+      !finalPrice ||
+      finalPrice <= 0 ||
+      product.stock === null ||
+      product.stock === undefined
+    ) {
       stockText = "Disponible pronto";
       stockClass = "product-detail-status-muted";
       StockIcon = Clock;
@@ -278,11 +299,11 @@ const ProductDetailPage = () => {
       stockClass = "product-detail-status-danger";
       StockIcon = AlertTriangle;
     } else if (product.stock <= 10) {
-      stockText = "Pocas unidades disponibles";
+      stockText = "Pocas unidades";
       stockClass = "product-detail-status-warning";
       StockIcon = AlertTriangle;
     } else {
-      stockText = "Disponible para sorprender hoy";
+      stockText = "Disponible para hoy";
       stockClass = "product-detail-status-success";
       StockIcon = CheckCircle;
     }
@@ -377,14 +398,19 @@ const ProductDetailPage = () => {
           </div>
 
           <div className="product-detail-info">
-            <div>
-              <p className="product-detail-kicker">Detalle especial</p>
+            <div className="product-detail-heading">
+              <div className="product-detail-topline">
+                <span className="product-detail-kicker">
+                  {getCategoryName(product.category)}
+                </span>
+                <span className="product-detail-code">{product.id}</span>
+              </div>
 
               <h2 className="product-detail-title">{product.title}</h2>
 
               <p className="product-detail-description">
                 {product.description ||
-                  "Un detalle pensado para sorprender, emocionar y hacer que ese momento se sienta especial."}
+                  "Un detalle pensado para emocionar, sorprender y hacer sentir especial a alguien importante."}
               </p>
             </div>
 
@@ -396,107 +422,119 @@ const ProductDetailPage = () => {
 
               {available && (
                 <div className="product-detail-viewers">
-                  {viewers} personas viendo este detalle
+                  <span />
+                  {viewers} viendo ahora
                 </div>
               )}
             </div>
 
-            <div className="product-detail-price-box">
-              <p>Precio</p>
+            <div className="product-detail-buy-box">
+              <div className="product-detail-price-box">
+                <p>Precio total</p>
 
-              <div className="product-detail-price">
-                <span>S/</span>
-                <strong>{productPrice.toFixed(2)}</strong>
-              </div>
-
-              {effectiveQty > 1 && (
-                <small>
-                  Total del pedido: <strong>S/ {total.toFixed(2)}</strong>
-                </small>
-              )}
-
-              {!isQtyInputValid && (
-                <small className="product-detail-error">
-                  Ingresa una cantidad válida para continuar
-                </small>
-              )}
-            </div>
-
-            {available && (
-              <div className="product-detail-qty-block">
-                <p>Cantidad</p>
-
-                <div className="product-detail-qty">
-                  <button
-                    type="button"
-                    onClick={() => updateQty(effectiveQty - 1)}
-                    aria-label="Disminuir cantidad"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={qtyInput}
-                    onChange={(e) => handleQtyInputChange(e.target.value)}
-                    onBlur={handleQtyInputBlur}
-                    onKeyDown={handleQtyInputKeyDown}
-                    placeholder="1"
-                    aria-label="Cantidad"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => updateQty(effectiveQty + 1)}
-                    aria-label="Aumentar cantidad"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                <div className="product-detail-price">
+                  <span>S/</span>
+                  <strong>{finalPrice.toFixed(2)}</strong>
                 </div>
-              </div>
-            )}
 
-            <div className="product-detail-actions">
+                {hasOffer && (
+                  <small className="product-detail-price-old">
+                    Antes S/ {originalPrice.toFixed(2)}
+                  </small>
+                )}
+
+                {effectiveQty > 1 && (
+                  <small>
+                    Total del pedido: <strong>S/ {total.toFixed(2)}</strong>
+                  </small>
+                )}
+
+                {!isQtyInputValid && (
+                  <small className="product-detail-error">
+                    Ingresa una cantidad válida para continuar
+                  </small>
+                )}
+              </div>
+
               {available && (
+                <div className="product-detail-qty-block">
+                  <p>Cantidad</p>
+
+                  <div className="product-detail-qty">
+                    <button
+                      type="button"
+                      onClick={() => updateQty(effectiveQty - 1)}
+                      aria-label="Disminuir cantidad"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={qtyInput}
+                      onChange={(e) => handleQtyInputChange(e.target.value)}
+                      onBlur={handleQtyInputBlur}
+                      onKeyDown={handleQtyInputKeyDown}
+                      placeholder="1"
+                      aria-label="Cantidad"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => updateQty(effectiveQty + 1)}
+                      aria-label="Aumentar cantidad"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="product-detail-actions">
+                {available && (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!isQtyInputValid}
+                    className={[
+                      "product-detail-button",
+                      isQtyInputValid
+                        ? "product-detail-button-primary"
+                        : "product-detail-button-disabled",
+                    ].join(" ")}
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                    <span>
+                      {isQtyInputValid
+                        ? `Reservar este detalle — S/ ${total.toFixed(2)}`
+                        : "Ingresa una cantidad"}
+                    </span>
+                  </button>
+                )}
+
                 <button
-                  onClick={handleAddToCart}
-                  disabled={!isQtyInputValid}
-                  className={[
-                    "product-detail-button",
-                    isQtyInputValid
-                      ? "product-detail-button-primary"
-                      : "product-detail-button-disabled",
-                  ].join(" ")}
+                  onClick={handleWhatsApp}
+                  className="product-detail-button product-detail-button-whatsapp"
                 >
-                  <PlusCircle className="w-5 h-5" />
+                  <MessageCircle className="w-5 h-5" />
                   <span>
-                    {isQtyInputValid
-                      ? `Agregar al pedido — S/ ${total.toFixed(2)}`
-                      : "Ingresa una cantidad"}
+                    {isPreventa
+                      ? "Consultar por WhatsApp"
+                      : isOutOfStock
+                      ? "Consultar disponibilidad"
+                      : "Pedir por WhatsApp"}
                   </span>
                 </button>
-              )}
-
-              <button
-                onClick={handleWhatsApp}
-                className="product-detail-button product-detail-button-whatsapp"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>
-                  {isPreventa
-                    ? "Consultar por WhatsApp"
-                    : isOutOfStock
-                    ? "Consultar disponibilidad"
-                    : "Pedir por WhatsApp"}
-                </span>
-              </button>
+              </div>
             </div>
 
             <div className="product-detail-note">
-              <p>{BRAND_CONFIG.modal.questionTitle}</p>
-              <small>{BRAND_CONFIG.modal.questionDescription}</small>
+              <Heart className="w-5 h-5" />
+              <div>
+                <p>{BRAND_CONFIG.modal.questionTitle}</p>
+                <small>{BRAND_CONFIG.modal.questionDescription}</small>
+              </div>
             </div>
           </div>
         </section>

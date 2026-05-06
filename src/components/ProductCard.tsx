@@ -13,7 +13,12 @@ import {
 import { BRAND_CONFIG } from "@/config/brand";
 import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
 import { CartItem, Product } from "@/types/product";
-import { getProductPrice, isProductAvailable } from "@/lib/products";
+import {
+  getProductPrice,
+  getOriginalProductPrice,
+  hasOfferPrice,
+  isProductAvailable,
+} from "@/lib/products";
 
 interface ProductCardProps {
   product: Product;
@@ -27,38 +32,67 @@ const getEmotionalHint = (product: Product) => {
   if (product.message) return product.message;
   if (product.occasion) return `Ideal para ${product.occasion}`;
 
-  const category = product.category.toLowerCase();
+  const categories = product.categories ?? [product.category];
+  const categoryText = categories.join(" ").toLowerCase();
 
-  if (category.includes("enamorar")) return "Para decirlo bonito, sin dar tantas vueltas.";
-  if (category.includes("especiales")) return "Ideal para fechas que no se pueden dejar pasar.";
-  if (category.includes("sorprender")) return "Para llegar bonito y sin aviso.";
-  if (category.includes("celebrar")) return "Perfecto para hacer especial el momento.";
-  if (category.includes("agradecer")) return "Un gesto cálido para decir gracias.";
-  if (category.includes("perdon") || category.includes("perdón")) return "Un detalle para abrir conversación.";
-  if (category.includes("acompa")) return "Cuando las palabras no alcanzan.";
+  if (categoryText.includes("enamorar")) {
+    return "Para decirlo bonito, sin dar tantas vueltas.";
+  }
+
+  if (categoryText.includes("especiales")) {
+    return "Ideal para fechas que no se pueden dejar pasar.";
+  }
+
+  if (categoryText.includes("sorprender")) {
+    return "Para llegar bonito y sin aviso.";
+  }
+
+  if (categoryText.includes("celebrar")) {
+    return "Perfecto para hacer especial el momento.";
+  }
+
+  if (categoryText.includes("agradecer")) {
+    return "Un gesto cálido para decir gracias.";
+  }
+
+  if (categoryText.includes("perdon") || categoryText.includes("perdón")) {
+    return "Un detalle para abrir conversación.";
+  }
+
+  if (categoryText.includes("acompa")) {
+    return "Cuando las palabras no alcanzan.";
+  }
 
   return "Un detalle listo para sorprender.";
 };
 
 export function ProductCard({
-  product: p,
+  product,
   cart = [],
   onAddToCart,
 }: ProductCardProps) {
   const navigate = useNavigate();
 
-  const available = isProductAvailable(p);
-  const isPreventa = (p.status || "").trim().toLowerCase() === "preventa";
-  const price = getProductPrice(p);
+  const available = isProductAvailable(product);
+  const isPreventa =
+    (product.status || "").trim().toLowerCase() === "preventa";
 
-  const isOutOfStock = !isPreventa && price > 0 && p.stock === 0;
+  const price = getProductPrice(product);
+  const originalPrice = getOriginalProductPrice(product);
+  const hasOffer = hasOfferPrice(product);
+
+  const isOutOfStock =
+    !isPreventa && price > 0 && product.stock === 0;
+
   const showWhatsAppButton = isPreventa || isOutOfStock;
 
-  const cartItem = cart.find((item) => item.id === p.id);
+  const cartItem = cart.find((item) => item.id === product.id);
   const qtyInCart = cartItem?.qty ?? 0;
   const isInCart = qtyInCart > 0;
 
-  const [viewers, setViewers] = useState(Math.floor(Math.random() * 8) + 6);
+  const [viewers, setViewers] = useState(
+    Math.floor(Math.random() * 8) + 6
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -69,28 +103,30 @@ export function ProductCard({
   }, []);
 
   const goToDetail = () => {
-    navigate(`/catalogo/producto.html?id=${p.id}&cat=${p.category}`);
+    navigate(
+      `/catalogo/producto.html?id=${product.id}&cat=${product.category}`
+    );
   };
 
   const handleAdd = () => {
     if (!available || isPreventa) return;
-    onAddToCart(p);
+    onAddToCart(product);
   };
 
   const handleWhatsApp = () => {
     const statusText = isPreventa
-      ? "Hola, quiero consultar este detalle"
+      ? BRAND_CONFIG.productCard.whatsappPreventa
       : isOutOfStock
-      ? "Hola, quiero saber si pueden preparar nuevamente este detalle"
-      : "Hola, quiero enviar este detalle";
+      ? BRAND_CONFIG.productCard.whatsappRestock
+      : BRAND_CONFIG.productCard.whatsappDefault;
 
     const message =
       `${statusText}:%0A%0A` +
-      `Producto: ${p.title}%0A` +
-      `Código: ${p.id}%0A` +
-      `Categoría: ${p.category}%0A` +
+      `Producto: ${product.title}%0A` +
+      `Código: ${product.id}%0A` +
+      `Categoría: ${product.category}%0A` +
       `Precio: S/ ${price.toFixed(2)}%0A%0A` +
-      `Quisiera coordinar dedicatoria y entrega.`;
+      `${BRAND_CONFIG.checkout.closing}`;
 
     window.open(
       `https://wa.me/${BRAND_CONFIG.contact.whatsapp}?text=${message}`,
@@ -106,30 +142,35 @@ export function ProductCard({
     stockText = "Preventa";
     StockIcon = Clock;
     stockClass = "product-card-status product-card-status-preorder";
-  } else if (!price || price <= 0 || p.stock === null || p.stock === undefined) {
+  } else if (
+    !price ||
+    price <= 0 ||
+    product.stock === null ||
+    product.stock === undefined
+  ) {
     stockText = "Próximamente";
     StockIcon = Clock;
     stockClass = "product-card-status product-card-status-muted";
-  } else if (p.stock === 0) {
+  } else if (product.stock === 0) {
     stockText = "Agotado temporalmente";
     StockIcon = XCircle;
     stockClass = "product-card-status product-card-status-danger";
-  } else if (p.stock <= 3) {
-    stockText = `Últimos ${p.stock}`;
+  } else if (product.stock <= 3) {
+    stockText = `Últimos ${product.stock}`;
     StockIcon = AlertTriangle;
     stockClass = "product-card-status product-card-status-danger";
-  } else if (p.stock <= 10) {
+  } else if (product.stock <= 10) {
     stockText = "Pocas unidades";
     StockIcon = AlertTriangle;
     stockClass = "product-card-status product-card-status-warning";
   }
 
   return (
-    <article className="product-card-gleemour">
+    <article className="product-card">
       <div className="product-card-image-wrap">
         <img
-          src={p.img || "/placeholder.svg"}
-          alt={p.title}
+          src={product.img || "/placeholder.svg"}
+          alt={product.title}
           onClick={goToDetail}
           loading="lazy"
           className={`product-card-image ${
@@ -137,16 +178,16 @@ export function ProductCard({
           }`}
         />
 
-        {p.badges && p.badges.length > 0 && (
+        {product.badges && product.badges.length > 0 && (
           <div className="product-card-badges">
-            {sortBadges(p.badges)
+            {sortBadges(product.badges)
               .slice(0, 2)
               .map((badge, index) => {
                 const presentation = getBadgePresentation(badge);
 
                 return (
                   <span
-                    key={`${p.id}-badge-${index}`}
+                    key={`${product.id}-badge-${index}`}
                     className={[
                       "product-card-badge",
                       presentation.className,
@@ -176,20 +217,20 @@ export function ProductCard({
 
       <div className="product-card-body">
         <div className="product-card-meta">
-          <span>{p.id}</span>
-          <span>{p.category}</span>
+          <span>{product.id}</span>
+          <span>{product.category}</span>
         </div>
 
         <h3 onClick={goToDetail} className="product-card-title">
-          {p.title}
+          {product.title}
         </h3>
 
         <p className="product-card-description">
-          {p.description || getEmotionalHint(p)}
+          {product.description || getEmotionalHint(product)}
         </p>
 
         <p className="product-card-hint">
-          {getEmotionalHint(p)}
+          {getEmotionalHint(product)}
         </p>
 
         <div className="product-card-price-block">
@@ -199,13 +240,26 @@ export function ProductCard({
               <small>Te orientamos por WhatsApp</small>
             </>
           ) : (
-            <>
+            <div className="product-card-price-wrap">
+              {hasOffer && (
+                <div className="product-card-price-old">
+                  S/ {originalPrice.toFixed(2)}
+                </div>
+              )}
+
               <div className="product-card-price">
                 <span>S/</span>
                 <strong>{price.toFixed(2)}</strong>
               </div>
-              <small>Precio del detalle</small>
-            </>
+
+              {hasOffer ? (
+                <small className="product-card-offer-text">
+                  Oferta especial disponible
+                </small>
+              ) : (
+                <small>Precio del detalle</small>
+              )}
+            </div>
           )}
         </div>
 
@@ -236,7 +290,9 @@ export function ProductCard({
           {showWhatsAppButton ? (
             <>
               <MessageCircle className="w-4 h-4" />
-              <span>{isPreventa ? "Consultar" : "Consultar disponibilidad"}</span>
+              <span>
+                {isPreventa ? "Consultar" : "Consultar disponibilidad"}
+              </span>
             </>
           ) : available ? (
             isInCart ? (

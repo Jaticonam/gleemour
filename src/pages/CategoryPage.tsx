@@ -4,7 +4,7 @@ import { ArrowLeft, Search, SearchX } from "lucide-react";
 
 import { BRAND_CONFIG } from "@/config/brand";
 import { useCart } from "@/hooks/use-cart";
-import { fetchProducts } from "@/lib/products";
+import { fetchProducts, productBelongsToCategory } from "@/lib/products";
 import { searchProducts } from "@/lib/search";
 import { sortByCommercialPriority } from "@/lib/sort";
 import { Product } from "@/types/product";
@@ -47,8 +47,8 @@ const CategoryPage = () => {
   } = useCart();
 
   useEffect(() => {
-    fetchProducts().then((p) => {
-      setProducts(p);
+    fetchProducts().then((loadedProducts) => {
+      setProducts(loadedProducts);
       setLoading(false);
     });
   }, []);
@@ -70,15 +70,17 @@ const CategoryPage = () => {
   );
 
   const categoryProducts = useMemo(() => {
-    if (activeCategory === "todas") return products;
-
-    return products.filter((product) => product.category === activeCategory);
+    return products.filter((product) =>
+      productBelongsToCategory(product, activeCategory)
+    );
   }, [products, activeCategory]);
 
   const filteredProducts = useMemo(() => {
     const term = categorySearch.trim();
 
-    if (!term) return sortByCommercialPriority(categoryProducts);
+    if (!term) {
+      return sortByCommercialPriority(categoryProducts);
+    }
 
     const insideCategory = searchProducts(categoryProducts, term);
 
@@ -109,6 +111,10 @@ const CategoryPage = () => {
     [addToCart]
   );
 
+  const handleCloseAddModal = useCallback(() => {
+    setAddModalOpen(false);
+  }, []);
+
   const handleAddExtra = useCallback(
     (qty: number) => {
       if (!selectedProduct || qty <= 0) return;
@@ -122,8 +128,6 @@ const CategoryPage = () => {
     : 0;
 
   const hasSearch = categorySearch.trim().length > 0;
-
-  if (loading) return <CategorySkeleton />;
 
   return (
     <div className="category-page">
@@ -172,7 +176,7 @@ const CategoryPage = () => {
               <input
                 type="text"
                 value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
+                onChange={(event) => setCategorySearch(event.target.value)}
                 placeholder={`Busca algo para ${
                   categoryInfo?.name?.toLowerCase() || "sorprender"
                 }...`}
@@ -199,7 +203,9 @@ const CategoryPage = () => {
           onSelect={handleCategorySelect}
         />
 
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <CategorySkeleton />
+        ) : filteredProducts.length === 0 ? (
           <div className="category-page-empty">
             <div>
               <SearchX className="w-10 h-10" />
@@ -211,15 +217,10 @@ const CategoryPage = () => {
                 : "Aún no hay detalles en esta categoría"}
             </p>
 
-            <small>
-              Prueba con otra categoría o explora todo el catálogo.
-            </small>
+            <small>Prueba con otra categoría o explora todo el catálogo.</small>
 
             {hasSearch && (
-              <button
-                type="button"
-                onClick={() => setCategorySearch("")}
-              >
+              <button type="button" onClick={() => setCategorySearch("")}>
                 Limpiar búsqueda
               </button>
             )}
@@ -269,7 +270,7 @@ const CategoryPage = () => {
         open={addModalOpen}
         product={selectedProduct}
         currentQty={currentQtyInCart}
-        onClose={() => setAddModalOpen(false)}
+        onClose={handleCloseAddModal}
         onAddExtra={handleAddExtra}
         onOpenCart={() => {
           setAddModalOpen(false);

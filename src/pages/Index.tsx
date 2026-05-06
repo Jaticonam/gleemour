@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { SearchX } from "lucide-react";
 
 import { useCart } from "@/hooks/use-cart";
-import { fetchProducts } from "@/lib/products";
+import { fetchProducts, productBelongsToCategory } from "@/lib/products";
 import { searchProducts } from "@/lib/search";
 import { sortByCommercialPriority } from "@/lib/sort";
 import { Product } from "@/types/product";
@@ -96,7 +96,9 @@ const Index = () => {
       return term ? searchProducts(products, term) : products;
     }
 
-    const categoryProducts = products.filter((p) => p.category === activeCategory);
+    const categoryProducts = products.filter((product) =>
+      productBelongsToCategory(product, activeCategory)
+    );
 
     if (!term) return categoryProducts;
 
