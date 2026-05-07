@@ -109,6 +109,21 @@ const Index = () => {
     return searchProducts(products, term);
   }, [products, activeCategory, searchQuery]);
 
+  const visibleCategories = useMemo(() => {
+    return BRAND_CONFIG.categories.filter((category) => {
+      if (
+        category.id === "todas" ||
+        category.id === "all"
+      ) {
+        return true;
+      }
+
+      return products.some((product) =>
+        productBelongsToCategory(product, category.id)
+      );
+    });
+  }, [products]);
+
   const showPriorityBlocks = activeCategory === "todas" && !searchQuery.trim();
 
   const topProducts = useMemo(() => {
@@ -179,16 +194,8 @@ const Index = () => {
       </header>
 
       <main className="catalog-main">
-        <section className="catalog-hero">
-          <p className="catalog-kicker">Catálogo Gleemour</p>
-          <h1>Elige el detalle perfecto</h1>
-          <p>
-            Encuentra regalos listos para sorprender, agradecer, celebrar o decir eso que a veces cuesta poner en palabras.
-          </p>
-        </section>
-
         <CategoryFilter
-          categories={BRAND_CONFIG.categories}
+          categories={visibleCategories}
           active={activeCategory}
           onSelect={handleCategorySelect}
         />

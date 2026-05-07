@@ -6,3 +6,5 @@ export * from "@/lib/product/state";
 export * from "@/lib/product/whatsapp";
 export * from "@/lib/product/emotional";
 export * from "@/lib/product/routes";
+export * from "@/lib/product/related";
+export * from "@/lib/product/socialProof";

@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, X, Package, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  X,
+  Package,
+  Sparkles,
+  Heart,
+  Flower2,
+  CirclePlus,
+} from "lucide-react";
+
 import { Product } from "@/types/product";
 import { BRAND_CONFIG } from "@/config/brand";
 
@@ -79,26 +88,35 @@ export function AddToCartModal({
           <Sparkles className="w-4 h-4" />
           <div>
             <p>{BRAND_CONFIG.modal.questionTitle}</p>
-            <span>
-              {BRAND_CONFIG.modal.questionDescription}
-            </span>
+            <span>{BRAND_CONFIG.modal.questionDescription}</span>
           </div>
         </div>
 
         <div className="add-cart-modal-actions">
+          <div className="add-cart-modal-action-grid">
+            <button
+              onClick={onSecondaryAction ?? onClose}
+              className="add-cart-modal-special"
+            >
+              <Heart className="w-4 h-4" />
+              Hacerlo especial
+            </button>
+
+            <button
+              onClick={onClose}
+              className="add-cart-modal-more"
+            >
+              <CirclePlus className="w-4 h-4" />
+              Otro detalle
+            </button>
+          </div>
+
           <button
             onClick={onOpenCart}
             className="add-cart-modal-primary"
           >
-            <Package className="w-4 h-4" />
-            {BRAND_CONFIG.modal.primaryCta}
-          </button>
-
-          <button
-            onClick={onSecondaryAction ?? onClose}
-            className="add-cart-modal-secondary"
-          >
-            {secondaryActionLabel ?? BRAND_CONFIG.modal.secondaryCta}
+            <Flower2 className="w-4 h-4" />
+            Realizar mi pedido
           </button>
         </div>
       </div>

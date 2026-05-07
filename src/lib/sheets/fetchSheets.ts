@@ -21,6 +21,7 @@ const PRODUCT_REQUIRED_HEADERS = [
   "img",
   "status",
   "badge",
+  "attributes",
   "priority",
   "occasion",
   "message",

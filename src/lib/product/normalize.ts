@@ -4,7 +4,9 @@ import type { Product } from "@/types/product";
  * Garantiza contrato estable de producto.
  * Este helper protege al frontend de datos incompletos o inconsistentes.
  */
-export function ensureCatalogProduct(product: Partial<Product>): Product {
+export function ensureCatalogProduct(
+  product: Partial<Product>
+): Product {
   const category = product.category ?? "";
   const price = Number(product.price) || 0;
 
@@ -19,22 +21,30 @@ export function ensureCatalogProduct(product: Partial<Product>): Product {
     id: product.id ?? "",
     title: product.title ?? "",
     description: product.description ?? "",
+
     category,
     categories:
       product.categories && product.categories.length > 0
         ? product.categories
         : [category].filter(Boolean),
+
     price,
     offer_price: offerPrice,
+
     stock:
       product.stock === null || product.stock === undefined
         ? null
         : Number(product.stock),
+
     img: product.img ?? "",
+
     priority: Number(product.priority) || 0,
     status: product.status ?? "Publicado",
+
     badges: product.badges ?? [],
+    attributes: product.attributes ?? [],
     addons: product.addons ?? [],
+
     occasion: product.occasion,
     message: product.message,
     highlight: product.highlight,
@@ -45,6 +55,8 @@ export function ensureCatalogProduct(product: Partial<Product>): Product {
 /**
  * Normaliza una lista de productos.
  */
-export function normalizeProducts(products: Partial<Product>[]): Product[] {
+export function normalizeProducts(
+  products: Partial<Product>[]
+): Product[] {
   return products.map(ensureCatalogProduct);
 }

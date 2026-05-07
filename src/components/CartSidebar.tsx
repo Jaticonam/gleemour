@@ -28,7 +28,23 @@ interface CartSidebarProps {
   onClearCart?: () => void;
 }
 
-const WHATSAPP_NUMBER = "51936188636";
+function getCartOfferSavings(cart: CartItem[]): number {
+  return cart.reduce((total, item) => {
+    const basePrice = Number(item.price) || 0;
+
+    const offerPrice =
+      item.offer_price !== null &&
+      item.offer_price !== undefined &&
+      Number(item.offer_price) > 0 &&
+      Number(item.offer_price) < basePrice
+        ? Number(item.offer_price)
+        : null;
+
+    if (!offerPrice) return total;
+
+    return total + (basePrice - offerPrice) * item.qty;
+  }, 0);
+}
 
 function checkout(
   cart: CartItem[],
@@ -48,11 +64,12 @@ function checkout(
     const note = item.note?.trim().replace(/\s+/g, " ");
 
     message += `• *${item.title}*\n`;
+    message += `  Código: ${item.id}\n`;
     message += `  Cantidad: ${item.qty}\n`;
     message += `  Subtotal: S/${subtotal.toFixed(2)}\n`;
 
     if (note) {
-      message += `  Detalle: ${note}\n`;
+      message += `  Dedicatoria: ${note}\n`;
     }
 
     message += "\n";
@@ -62,7 +79,7 @@ function checkout(
   message += `*${BRAND_CONFIG.cart.totalLabel}: S/${total}*\n`;
 
   if (savings > 0) {
-    message += `Beneficio aplicado: S/${savings.toFixed(2)}\n`;
+    message += `Ahorro aplicado: S/${savings.toFixed(2)}\n`;
   }
 
   message += `\n${BRAND_CONFIG.checkout.closing}`;
@@ -78,7 +95,6 @@ function checkout(
     onClose();
   }, 300);
 }
-
 
 function QtyInput({
   item,
@@ -192,7 +208,7 @@ function CartRow({
     >
       <div className="cart-sidebar-item-main">
         <div className="cart-sidebar-item-img">
-          <img src={item.img} alt={item.title} />
+          <img src={item.img || "/placeholder.svg"} alt={item.title} />
         </div>
 
         <div className="cart-sidebar-item-info">
@@ -245,7 +261,7 @@ function CartRow({
 
         <div className="cart-sidebar-item-helper">
           <Gift className="w-3.5 h-3.5" />
-          <span>Personaliza tu detalle</span>
+          <span>Agrega una dedicatoria o detalle especial</span>
         </div>
       </div>
 
@@ -267,6 +283,9 @@ export function CartSidebar({
   onChangeNote,
   onClearCart,
 }: CartSidebarProps) {
+  const offerSavings = getCartOfferSavings(cart);
+  const totalSavings = savings + offerSavings;
+
   if (!isOpen) return null;
 
   return (
@@ -279,11 +298,11 @@ export function CartSidebar({
             </div>
 
             <div>
-              <h2>Mi Pedido</h2>
+              <h2>Tu detalle está casi listo ✨</h2>
               <span>
                 {cart.length === 1
-                  ? "1 detalle seleccionado"
-                  : `${cart.length} detalles seleccionados`}
+                  ? "1 sorpresa preparada"
+                  : `${cart.length} detalles preparados`}
               </span>
             </div>
           </div>
@@ -319,20 +338,20 @@ export function CartSidebar({
         </div>
 
         <footer className="cart-sidebar-footer">
-          {savings > 0 && (
+          {totalSavings > 0 && (
             <div className="cart-sidebar-benefit">
               <div>
                 <Sparkles className="w-4 h-4" />
-                <span>Beneficio aplicado</span>
+                <span>Ahorro aplicado</span>
               </div>
 
-              <strong>- S/ {savings.toFixed(2)}</strong>
+              <strong>- S/ {totalSavings.toFixed(2)}</strong>
             </div>
           )}
 
           <div className="cart-sidebar-total-row">
             <div>
-              <span>Total a pagar hoy</span>
+              <span>Resumen de tu detalle</span>
 
               <div className="cart-sidebar-total">
                 <small>S/</small>
@@ -348,12 +367,17 @@ export function CartSidebar({
             </div>
           </div>
 
+          <div className="cart-sidebar-delivery-note">
+            <Sparkles className="w-4 h-4" />
+            <span>Coordinamos contigo la entrega y dedicatoria 💌</span>
+          </div>
+
           <button
             onClick={() =>
               checkout(
                 cart,
                 totalPrice.toFixed(2),
-                savings,
+                totalSavings,
                 onClearCart,
                 onClose
               )
@@ -367,7 +391,7 @@ export function CartSidebar({
             ].join(" ")}
           >
             <MessageCircle className="w-5 h-5" />
-            <span>Enviar pedido por WhatsApp</span>
+            <span>Enviar mi sorpresa 💌</span>
           </button>
         </footer>
       </aside>

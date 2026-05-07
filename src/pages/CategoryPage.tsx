@@ -69,6 +69,16 @@ const CategoryPage = () => {
     (category) => category.id === activeCategory
   );
 
+  const visibleCategories = useMemo(() => {
+    return BRAND_CONFIG.categories.filter((category) => {
+      if (category.id === "todas") return true;
+
+      return products.some((product) =>
+        productBelongsToCategory(product, category.id)
+      );
+    });
+  }, [products]);
+
   const categoryProducts = useMemo(() => {
     return products.filter((product) =>
       productBelongsToCategory(product, activeCategory)
@@ -132,7 +142,7 @@ const CategoryPage = () => {
   return (
     <div className="category-page">
       <header className="category-page-header">
-        <CountdownTimer />
+        {/* <CountdownTimer /> */}
 
         <div className="category-page-header-inner">
           <div className="category-page-header-row">
@@ -198,7 +208,7 @@ const CategoryPage = () => {
 
       <main className="category-page-main">
         <CategoryFilter
-          categories={BRAND_CONFIG.categories}
+          categories={visibleCategories}
           active={activeCategory}
           onSelect={handleCategorySelect}
         />

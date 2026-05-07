@@ -63,6 +63,13 @@ export interface Product {
   badges: string[];
 
   /**
+   * Atributos visuales/técnicos del producto.
+   * Se muestran como badges informativos sobre la foto.
+   * Ejemplo en Sheets: "natural|corporate"
+   */
+  attributes: string[];
+
+  /**
    * Addons permitidos para este producto.
    * Ejemplo: chocolates, globos, peluches, tarjetas.
    */

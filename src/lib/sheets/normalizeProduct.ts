@@ -3,28 +3,13 @@ import { getCategoryIdFromSheetLabel } from "@/config/categories";
 
 type CsvRow = Record<string, string>;
 
-/**
- * Producto normalizado desde Google Sheets.
- * Debe cumplir el contrato final del frontend.
- */
 export type SheetProduct = Product;
-
-/**
- * Addon normalizado desde Google Sheets.
- */
 export type SheetAddon = Addon;
 
-/**
- * Limpia textos provenientes de Sheets.
- */
 function cleanText(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-/**
- * Convierte texto visible en id técnico.
- * Ejemplo: "Para enamorar" -> "para-enamorar"
- */
 function slugify(value: unknown): string {
   return cleanText(value)
     .toLowerCase()
@@ -34,10 +19,6 @@ function slugify(value: unknown): string {
     .replace(/[^\w-]+/g, "");
 }
 
-/**
- * Convierte valores numéricos de Sheets.
- * Soporta coma decimal.
- */
 function parseNumber(value: unknown): number | null {
   const cleaned = cleanText(value).replace(/\s/g, "").replace(",", ".");
 
@@ -47,18 +28,10 @@ function parseNumber(value: unknown): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
-/**
- * Número obligatorio.
- * Si está vacío o inválido, devuelve 0.
- */
 function parseRequiredNumber(value: unknown): number {
   return parseNumber(value) ?? 0;
 }
 
-/**
- * Convierte listas separadas por "|".
- * Ejemplo: "Nuevo|Oferta" -> ["Nuevo", "Oferta"]
- */
 function parsePipeList(value: unknown): string[] {
   return cleanText(value)
     .split("|")
@@ -66,37 +39,56 @@ function parsePipeList(value: unknown): string[] {
     .filter(Boolean);
 }
 
-/**
- * Normaliza categorías adicionales.
- * Ejemplo: "momentos-especiales|para-sorprender"
- */
 function parseCategories(value: unknown): string[] {
   return parsePipeList(value)
     .map(getCategoryIdFromSheetLabel)
     .filter(Boolean);
 }
 
-/**
- * Normaliza badges comerciales.
- */
 function parseBadges(value: unknown): string[] {
   return parsePipeList(value);
 }
 
-/**
- * Normaliza addons permitidos para el producto.
- */
+function normalizeAttribute(value: unknown): string {
+  const slug = slugify(value);
+
+  const map: Record<string, string> = {
+    natural: "natural",
+    naturales: "natural",
+
+    artificial: "artificial",
+    artificiales: "artificial",
+
+    corporativo: "corporate",
+    corporativos: "corporate",
+    corporate: "corporate",
+
+    premium: "premium",
+    vip: "premium",
+
+    express: "express",
+    rapido: "express",
+    rapida: "express",
+    "entrega-rapida": "express",
+  };
+
+  return map[slug] ?? slug;
+}
+
+function parseAttributes(value: unknown): string[] {
+  return Array.from(
+    new Set(
+      parsePipeList(value)
+        .map(normalizeAttribute)
+        .filter(Boolean)
+    )
+  );
+}
+
 function parseAddons(value: unknown): string[] {
   return parsePipeList(value).map(slugify).filter(Boolean);
 }
 
-/**
- * Normaliza un producto desde una fila de Google Sheets.
- *
- * Regla:
- * category   = categoría principal
- * categories = categorías adicionales
- */
 export function normalizeProduct(row: CsvRow): SheetProduct {
   const primaryCategory = getCategoryIdFromSheetLabel(row.category);
   const extraCategories = parseCategories(row.categories);
@@ -117,6 +109,7 @@ export function normalizeProduct(row: CsvRow): SheetProduct {
     offer_price: parseNumber(row.offer_price),
 
     addons: parseAddons(row.addons),
+    attributes: parseAttributes(row.attributes),
 
     stock: parseNumber(row.stock),
     img: cleanText(row.img),
@@ -132,9 +125,6 @@ export function normalizeProduct(row: CsvRow): SheetProduct {
   };
 }
 
-/**
- * Normaliza un addon desde una fila de Google Sheets.
- */
 export function normalizeAddon(row: CsvRow): SheetAddon {
   return {
     id: cleanText(row.id),

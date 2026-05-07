@@ -15,6 +15,7 @@ import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
 import { getCategoryName } from "@/config/categories";
 
 import { CartItem, Product } from "@/types/product";
+import { PRODUCT_CARD_CONFIG } from "@/config/productCard";
 
 import {
   getProductPrice,
@@ -23,7 +24,9 @@ import {
   isProductAvailable,
   getProductState,
   buildProductWhatsAppUrl,
-  } from "@/lib/products";
+  getProductUrl,
+  getLiveViewers,
+} from "@/lib/product";
 
 interface ProductCardProps {
   product: Product;
@@ -36,7 +39,9 @@ export function ProductCard({
   product,
   cart = [],
   onAddToCart,
+  onImageClick,
 }: ProductCardProps) {
+
   const navigate = useNavigate();
 
   const available = isProductAvailable(product);
@@ -62,21 +67,23 @@ export function ProductCard({
   const isInCart = qtyInCart > 0;
 
   const [viewers, setViewers] = useState(
-    Math.floor(Math.random() * 8) + 6
+    getLiveViewers()
   );
+
+  const [zoomedProduct, setZoomedProduct] =
+  useState<Product | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setViewers(Math.floor(Math.random() * 8) + 6);
+      setViewers(getLiveViewers());
     }, 6500);
 
     return () => clearInterval(interval);
   }, []);
 
   const goToDetail = () => {
-    navigate(
-      `/catalogo/producto.html?id=${product.id}&cat=${product.category}`
-    );
+    // ProductDetail pausado temporalmente para vender directo desde la card.
+    return;
   };
 
   const handleAdd = () => {
@@ -133,11 +140,13 @@ export function ProductCard({
 
   return (
     <article className="product-card">
-      <div className="product-card-image-wrap">
+      <div
+        className="product-card-image-wrap"
+        onClick={() => onImageClick?.(product.img, product.title)}
+      >
         <img
           src={product.img || "/placeholder.svg"}
           alt={product.title}
-          onClick={goToDetail}
           loading="lazy"
           className={`product-card-image ${
             !available && !isPreventa
@@ -146,13 +155,16 @@ export function ProductCard({
           }`}
         />
 
+        <div className="product-card-image-overlay">
+          <span>Ver detalle</span>
+        </div>
+
         {product.badges && product.badges.length > 0 && (
           <div className="product-card-badges">
             {sortBadges(product.badges)
               .slice(0, 2)
               .map((badge, index) => {
-                const presentation =
-                  getBadgePresentation(badge);
+                const presentation = getBadgePresentation(badge);
 
                 return (
                   <span
@@ -173,13 +185,34 @@ export function ProductCard({
         {isInCart && (
           <div className="product-card-cart-badge">
             <CheckCircle className="w-3.5 h-3.5" />
-            <span>{qtyInCart} en pedido</span>
+            <span>
+              {qtyInCart} {PRODUCT_CARD_CONFIG.badges.inCartSuffix}
+            </span>
           </div>
         )}
 
-        {available && !isPreventa && (
-          <div className="product-card-ready-badge">
-            Listo para regalar
+        {product.attributes?.length > 0 && (
+          <div className="product-card-attributes">
+            {product.attributes.map((attribute) => {
+              const label =
+                PRODUCT_CARD_CONFIG.badges.attributes[
+                  attribute as keyof typeof PRODUCT_CARD_CONFIG.badges.attributes
+                ];
+
+              if (!label) return null;
+
+              return (
+                <span
+                  key={attribute}
+                  className={[
+                    "product-card-attribute",
+                    `product-card-attribute-${attribute}`,
+                  ].join(" ")}
+                >
+                  {label}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -187,22 +220,15 @@ export function ProductCard({
       <div className="product-card-body">
         <div className="product-card-meta">
           <span>{product.id}</span>
-
-          <span>
-            {getCategoryName(product.category)}
-          </span>
+          <span>{getCategoryName(product.category)}</span>
         </div>
 
-        <h3
-          onClick={goToDetail}
-          className="product-card-title"
-        >
+        <h3 onClick={goToDetail} className="product-card-title">
           {product.title}
         </h3>
 
         <p className="product-card-description">
-          {product.description ||
-            getEmotionalHint(product)}
+          {product.description || getEmotionalHint(product)}
         </p>
 
         <p className="product-card-hint">
@@ -213,11 +239,11 @@ export function ProductCard({
           {isPreventa ? (
             <>
               <span className="product-card-preorder">
-                Consultar
+                {PRODUCT_CARD_CONFIG.price.preorder}
               </span>
 
               <small>
-                Te orientamos por WhatsApp
+                {PRODUCT_CARD_CONFIG.price.preorderHelp}
               </small>
             </>
           ) : (
@@ -230,91 +256,155 @@ export function ProductCard({
 
               <div className="product-card-price">
                 <span>S/</span>
-
-                <strong>
-                  {price.toFixed(2)}
-                </strong>
+                <strong>{price.toFixed(2)}</strong>
               </div>
 
               {hasOffer ? (
                 <small className="product-card-offer-text">
-                  Oferta especial disponible
+                  {PRODUCT_CARD_CONFIG.price.offerText}
                 </small>
               ) : (
                 <small>
-                  Precio del detalle
+                  {PRODUCT_CARD_CONFIG.price.defaultText}
                 </small>
               )}
             </div>
           )}
         </div>
 
-        <div className={stockClass}>
-          <StockIcon className="w-3.5 h-3.5" />
+        <div className="product-card-social-row">
+          <div className={stockClass}>
+            <StockIcon className="w-3.5 h-3.5" />
+            <span>{productState.label}</span>
+          </div>
 
-          <span>{productState.label}</span>
+          {(available || isPreventa) && (
+            <div className="product-card-viewers">
+              <Eye className="w-3.5 h-3.5" />
+              <span>
+                {viewers} {PRODUCT_CARD_CONFIG.viewers.suffix}
+              </span>
+            </div>
+          )}
         </div>
 
-        {(available || isPreventa) && (
-          <div className="product-card-viewers">
-            <Eye className="w-3.5 h-3.5" />
-
-            <span>
-              {viewers} viendo ahora
-            </span>
-          </div>
-        )}
-
-        <button
-          onClick={
-            showWhatsAppButton
-              ? handleWhatsApp
-              : handleAdd
-          }
-          disabled={
-            !available && !showWhatsAppButton
-          }
-          className={[
-            "product-card-button",
-
-            showWhatsAppButton
-              ? "product-card-button-whatsapp"
-              : available
-              ? "product-card-button-primary"
-              : "product-card-button-disabled",
-          ].join(" ")}
-        >
-          {showWhatsAppButton ? (
-            <>
-              <MessageCircle className="w-4 h-4" />
-
-              <span>
-                {isPreventa
-                  ? "Consultar"
-                  : "Consultar disponibilidad"}
-              </span>
-            </>
-          ) : available ? (
-            isInCart ? (
+        <div className="product-card-actions">
+          <button
+            onClick={
+              showWhatsAppButton
+                ? handleWhatsApp
+                : handleAdd
+            }
+            disabled={!available && !showWhatsAppButton}
+            className={[
+              "product-card-button",
+              "product-card-button-main",
+              showWhatsAppButton
+                ? "product-card-button-whatsapp"
+                : available
+                ? "product-card-button-primary"
+                : "product-card-button-disabled",
+            ].join(" ")}
+          >
+            {showWhatsAppButton ? (
               <>
-                <CheckCircle className="w-4 h-4" />
-
-                <span>Agregar más</span>
-              </>
-            ) : (
-              <>
-                <PlusCircle className="w-4 h-4" />
-
+                <MessageCircle className="w-4 h-4" />
                 <span>
-                  Agregar al pedido
+                  {isPreventa
+                    ? PRODUCT_CARD_CONFIG.actions.whatsappPreorder
+                    : PRODUCT_CARD_CONFIG.actions.whatsappSoldOut}
                 </span>
               </>
-            )
-          ) : (
-            <span>Agotado</span>
+            ) : available ? (
+              isInCart ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{PRODUCT_CARD_CONFIG.actions.addMore}</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>{PRODUCT_CARD_CONFIG.actions.addToCart}</span>
+                </>
+              )
+            ) : (
+              <span>{PRODUCT_CARD_CONFIG.actions.soldOut}</span>
+            )}
+          </button>
+
+          {!showWhatsAppButton && (
+            <button
+              onClick={handleWhatsApp}
+              className="product-card-button-wa"
+              aria-label="Consultar por WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Consultar</span>
+            </button>
           )}
-        </button>
+        </div>
       </div>
+
+      {zoomedProduct && (
+        <div
+          className="product-zoom-overlay"
+          onClick={() => setZoomedProduct(null)}
+        >
+          <div
+            className="product-zoom-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="product-zoom-close"
+              onClick={() => setZoomedProduct(null)}
+            >
+              ✕
+            </button>
+
+            <img
+              src={zoomedProduct.img || "/placeholder.svg"}
+              alt={zoomedProduct.title}
+              className="product-zoom-image"
+            />
+
+            <div className="product-zoom-footer">
+              <h3>{zoomedProduct.title}</h3>
+
+              <div className="product-zoom-actions">
+                <button
+                  className="product-zoom-primary"
+                  onClick={() => {
+                    setZoomedProduct(null);
+                    onAddToCart(zoomedProduct);
+                  }}
+                >
+                  Agregar pedido
+                </button>
+
+                <button
+                  className="product-zoom-secondary"
+                  onClick={() => {
+                    setZoomedProduct(null);
+
+                    const url = buildProductWhatsAppUrl({
+                      product: zoomedProduct,
+                      qty: 1,
+                    });
+
+                    window.open(
+                      url,
+                      "_blank",
+                      "noopener,noreferrer"
+                    );
+                  }}
+                >
+                  Consultar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

@@ -18,15 +18,20 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import { getBadgePresentation, sortBadges } from "@/config/badgeRules";
 import { useCart } from "@/hooks/use-cart";
+import { fetchProducts } from "@/lib/products";
+
 import {
-  fetchProducts,
   isProductAvailable,
   getProductPrice,
   getOriginalProductPrice,
   hasOfferPrice,
   getProductState,
   buildProductWhatsAppUrl,
-} from "@/lib/products";
+  getCatalogUrl,
+  getCategoryUrl,
+  getRelatedProducts,
+  getLiveViewers,
+} from "@/lib/product";
 
 import { FloatingButtons } from "@/components/FloatingButtons";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -39,6 +44,7 @@ import { ProductSkeleton } from "@/components/skeletons/ProductSkeleton";
 import { AddToCartModal } from "@/components/AddToCartModal";
 import { BRAND_CONFIG } from "@/config/brand";
 import { getCategoryName } from "@/config/categories";
+import { PRODUCT_DETAIL_CONFIG } from "@/config/productDetail";
 
 const ProductDetailPage = () => {
   const { id: paramId } = useParams<{ id: string }>();
@@ -103,8 +109,6 @@ const ProductDetailPage = () => {
 
   const available = product ? isProductAvailable(product) : false;
 
-  const isPreventa =
-    (product?.status || "").trim().toLowerCase() === "preventa";
   const originalPrice = product
     ? getOriginalProductPrice(product)
     : 0;
@@ -115,9 +119,6 @@ const ProductDetailPage = () => {
   const hasOffer = product
     ? hasOfferPrice(product)
     : false;
-    
-  const isOutOfStock =
-    !!product && !isPreventa && finalPrice > 0 && product.stock === 0;
 
   const currentCartQty = useMemo(() => {
     if (!product) return 0;
@@ -136,15 +137,7 @@ const ProductDetailPage = () => {
   const related = useMemo(() => {
     if (!product) return [];
 
-    const sameCategory = products.filter(
-      (item) => item.category === product.category && item.id !== product.id
-    );
-
-    const otherCategories = products.filter(
-      (item) => item.category !== product.category && item.id !== product.id
-    );
-
-    return [...sameCategory.slice(0, 4), ...otherCategories.slice(0, 4)];
+    return getRelatedProducts(product, products, 4);
   }, [products, product]);
 
   const updateQty = useCallback((newQty: number) => {
@@ -241,7 +234,10 @@ const ProductDetailPage = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      showNotification("Enlace copiado", "Comparte este detalle");
+      showNotification(
+        PRODUCT_DETAIL_CONFIG.notifications.linkCopiedTitle,
+        PRODUCT_DETAIL_CONFIG.notifications.linkCopiedDescription
+      );
     }
   }, [product]);
 
@@ -263,6 +259,10 @@ const ProductDetailPage = () => {
       label: "No disponible",
       available: false,
     };
+  
+  const isPreventa = productState.type === "preorder";
+  const isOutOfStock = productState.type === "sold-out";
+    
 
 let stockClass = "product-detail-status-muted";
 let StockIcon = Clock;
@@ -303,7 +303,7 @@ switch (productState.type) {
   if (!product) {
     return (
       <div className="product-detail-empty">
-        <p>Detalle no encontrado</p>
+        <p>{PRODUCT_DETAIL_CONFIG.empty.title}</p>
         <button
           onClick={() =>
             navigate(
@@ -399,7 +399,7 @@ switch (productState.type) {
 
               <p className="product-detail-description">
                 {product.description ||
-                  "Un detalle pensado para emocionar, sorprender y hacer sentir especial a alguien importante."}
+                  PRODUCT_DETAIL_CONFIG.description.fallback}
               </p>
             </div>
 
@@ -419,7 +419,7 @@ switch (productState.type) {
 
             <div className="product-detail-buy-box">
               <div className="product-detail-price-box">
-                <p>Precio total</p>
+                <p>{PRODUCT_DETAIL_CONFIG.price.label}</p>
 
                 <div className="product-detail-price">
                   <span>S/</span>
@@ -428,26 +428,26 @@ switch (productState.type) {
 
                 {hasOffer && (
                   <small className="product-detail-price-old">
-                    Antes S/ {originalPrice.toFixed(2)}
+                    {PRODUCT_DETAIL_CONFIG.price.oldPricePrefix} {originalPrice.toFixed(2)}
                   </small>
                 )}
 
                 {effectiveQty > 1 && (
                   <small>
-                    Total del pedido: <strong>S/ {total.toFixed(2)}</strong>
+                    {PRODUCT_DETAIL_CONFIG.price.totalLabel}: <strong>S/ {total.toFixed(2)}</strong>
                   </small>
                 )}
 
                 {!isQtyInputValid && (
                   <small className="product-detail-error">
-                    Ingresa una cantidad válida para continuar
+                    {PRODUCT_DETAIL_CONFIG.quantity.invalidMessage}
                   </small>
                 )}
               </div>
 
               {available && (
                 <div className="product-detail-qty-block">
-                  <p>Cantidad</p>
+                  <p>{PRODUCT_DETAIL_CONFIG.quantity.label}</p>
 
                   <div className="product-detail-qty">
                     <button
@@ -496,8 +496,9 @@ switch (productState.type) {
                     <PlusCircle className="w-5 h-5" />
                     <span>
                       {isQtyInputValid
-                        ? `Reservar este detalle — S/ ${total.toFixed(2)}`
-                        : "Ingresa una cantidad"}
+                        ? `${PRODUCT_DETAIL_CONFIG.actions.addToCart} — S/ ${total.toFixed(2)}`
+                        : PRODUCT_DETAIL_CONFIG.actions.invalidQty
+                      }
                     </span>
                   </button>
                 )}
@@ -509,10 +510,10 @@ switch (productState.type) {
                   <MessageCircle className="w-5 h-5" />
                   <span>
                     {isPreventa
-                      ? "Consultar por WhatsApp"
+                      ? PRODUCT_DETAIL_CONFIG.actions.whatsappPreorder
                       : isOutOfStock
-                      ? "Consultar disponibilidad"
-                      : "Pedir por WhatsApp"}
+                      ? PRODUCT_DETAIL_CONFIG.actions.whatsappSoldOut
+                      : PRODUCT_DETAIL_CONFIG.actions.whatsappDefault}
                   </span>
                 </button>
               </div>
@@ -530,7 +531,7 @@ switch (productState.type) {
 
         {related.length > 0 && (
           <section className="product-detail-related">
-            <h3>Más ideas para regalar</h3>
+            <h3>{PRODUCT_DETAIL_CONFIG.related.title}</h3>
 
             <div className="product-detail-related-grid">
               {related.map((relatedProduct) => (
@@ -540,7 +541,10 @@ switch (productState.type) {
                   cart={cart}
                   onAddToCart={(item) => {
                     addToCart(item, 1);
-                    showNotification("Agregado al pedido", item.title);
+                    showNotification(
+                      PRODUCT_DETAIL_CONFIG.notifications.addedToCartTitle,
+                      item.title
+                    );
                   }}
                   onImageClick={(src, title) => setZoomImage({ src, title })}
                 />
