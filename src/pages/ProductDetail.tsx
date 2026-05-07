@@ -24,8 +24,9 @@ import {
   getProductPrice,
   getOriginalProductPrice,
   hasOfferPrice,
+  getProductState,
+  buildProductWhatsAppUrl,
 } from "@/lib/products";
-import { Product } from "@/types/product";
 
 import { FloatingButtons } from "@/components/FloatingButtons";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -247,67 +248,55 @@ const ProductDetailPage = () => {
   const handleWhatsApp = useCallback(() => {
     if (!product) return;
 
-    const statusText = isPreventa
-      ? BRAND_CONFIG.productCard?.whatsappPreventa ||
-        "Quiero consultar este detalle"
-      : isOutOfStock
-      ? BRAND_CONFIG.productCard?.whatsappRestock ||
-        "Quiero saber si pueden preparar nuevamente este detalle"
-      : BRAND_CONFIG.productCard?.whatsappDefault ||
-        "Hola, quiero enviar este detalle";
-
-    let message = `${statusText}:\n\n`;
-
-    message += `Producto: ${product.title}\n`;
-    message += `Código: ${product.id}\n`;
-    message += `Precio: S/ ${finalPrice.toFixed(2)}\n`;
-    message += `Cantidad: ${effectiveQty}\n\n`;
-
-    message += BRAND_CONFIG.checkout.closing;
-
-    const url = `https://wa.me/${BRAND_CONFIG.contact.whatsapp}?text=${encodeURIComponent(
-      message
-    )}`;
+    const url = buildProductWhatsAppUrl({
+      product,
+      qty: effectiveQty,
+    });
 
     window.open(url, "_blank", "noopener,noreferrer");
-  }, [product, finalPrice, effectiveQty, isPreventa, isOutOfStock]);
+  }, [product, effectiveQty]);
 
-  let stockText = "Próximo detalle";
-  let stockClass = "product-detail-status-muted";
-  let StockIcon = Clock;
+  const productState = product
+  ? getProductState(product)
+  : {
+      type: "unavailable",
+      label: "No disponible",
+      available: false,
+    };
 
-  if (product) {
-    if (isPreventa) {
-      stockText = "Disponible en preventa";
-      stockClass = "product-detail-status-preorder";
-      StockIcon = Clock;
-    } else if (
-      !finalPrice ||
-      finalPrice <= 0 ||
-      product.stock === null ||
-      product.stock === undefined
-    ) {
-      stockText = "Disponible pronto";
-      stockClass = "product-detail-status-muted";
-      StockIcon = Clock;
-    } else if (product.stock === 0) {
-      stockText = "Agotado temporalmente";
-      stockClass = "product-detail-status-danger";
-      StockIcon = XCircle;
-    } else if (product.stock <= 3) {
-      stockText = `Últimos disponibles: ${product.stock}`;
-      stockClass = "product-detail-status-danger";
-      StockIcon = AlertTriangle;
-    } else if (product.stock <= 10) {
-      stockText = "Pocas unidades";
-      stockClass = "product-detail-status-warning";
-      StockIcon = AlertTriangle;
-    } else {
-      stockText = "Disponible para hoy";
-      stockClass = "product-detail-status-success";
-      StockIcon = CheckCircle;
-    }
-  }
+let stockClass = "product-detail-status-muted";
+let StockIcon = Clock;
+
+switch (productState.type) {
+  case "available":
+    stockClass = "product-detail-status-success";
+    StockIcon = CheckCircle;
+    break;
+
+  case "preorder":
+    stockClass = "product-detail-status-preorder";
+    StockIcon = Clock;
+    break;
+
+  case "sold-out":
+    stockClass = "product-detail-status-danger";
+    StockIcon = XCircle;
+    break;
+
+  case "last-units":
+    stockClass = "product-detail-status-danger";
+    StockIcon = AlertTriangle;
+    break;
+
+  case "limited":
+    stockClass = "product-detail-status-warning";
+    StockIcon = AlertTriangle;
+    break;
+
+  default:
+    stockClass = "product-detail-status-muted";
+    StockIcon = Clock;
+}
 
   if (loading) return <ProductSkeleton />;
 
@@ -417,7 +406,7 @@ const ProductDetailPage = () => {
             <div className="product-detail-meta-row">
               <div className={`product-detail-status ${stockClass}`}>
                 <StockIcon className="w-4 h-4" />
-                <span>{stockText}</span>
+                <span>{productState.label}</span>
               </div>
 
               {available && (
