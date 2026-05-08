@@ -185,7 +185,7 @@ const Index = () => {
   return (
     <div className="catalog-page">
       <header className="catalog-sticky-header">
-        <CountdownTimer />
+        {/* <CountdownTimer /> */}
         <HeaderBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

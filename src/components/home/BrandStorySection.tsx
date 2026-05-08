@@ -1,77 +1,115 @@
-import { Store, MapPin } from "lucide-react";
+import {
+  Gift,
+  Heart,
+  HeartHandshake,
+  MapPin,
+  Music,
+  PartyPopper,
+  Sparkles,
+  Star,
+} from "lucide-react";
+
 import { WhatsAppIcon } from "../ui/SocialIcons";
 import HomeSectionHeader from "./HomeSectionHeader";
 
+const emotionalCategories = [
+  {
+    icon: Heart,
+    label: "Para enamorar",
+    description: "Amor, conquista y romanticismo",
+  },
+  {
+    icon: Sparkles,
+    label: "Momentos especiales",
+    description: "Fechas importantes y ocasiones memorables",
+  },
+  {
+    icon: Gift,
+    label: "Para sorprender",
+    description: "Detalles inesperados que emocionan",
+  },
+  {
+    icon: PartyPopper,
+    label: "Para celebrar",
+    description: "Cumpleaños, logros y momentos felices",
+  },
+  {
+    icon: Star,
+    label: "Para agradecer",
+    description: "Gratitud y aprecio sincero",
+  },
+  {
+    icon: HeartHandshake,
+    label: "Pedir perdón",
+    description: "Reconciliación y segundas oportunidades",
+  },
+];
+
 export default function BrandStorySection() {
   return (
-    <section className="home-container pt-10 pb-16 md:pt-14 md:pb-20">
-      
-      <div className="grid items-center gap-10 md:grid-cols-2 md:gap-14">
-
-        {/* imagen */}
-        <div className="relative order-1 md:order-none">
-          <div className="absolute -inset-3 z-0 rounded-[26px] bg-[#f7b1d6]/20 md:rotate-2" />
+    <section className="home-container brand-story-section">
+      <div className="brand-story-grid">
+        <div className="brand-story-image-wrap">
+          <div className="brand-story-image-bg" />
 
           <img
             src="https://dl.dropboxusercontent.com/scl/fi/ixrlm1m9hoia84zuuoef5/NAT_AMA_001.jpg?rlkey=07e39hpq6i8hogrdxi6stcqvu&st=o4fc1nh4&raw=1"
-            alt="wooly import peru"
-            className="relative z-10 h-[360px] w-full rounded-[24px] object-cover shadow-xl md:h-[480px]"
+            alt="Arreglo floral Gleemour inspirado en música y emociones"
+            className="brand-story-image"
             loading="lazy"
           />
+
+          <div className="brand-story-floating-card">
+            <span>Flores + música + emoción</span>
+            <strong>Experiencias que se recuerdan</strong>
+          </div>
         </div>
 
-        {/* contenido */}
-        <div className="text-center md:text-left">
-
+        <div className="brand-story-content">
           <HomeSectionHeader
-            icon={Store}
-            kicker="tu proveedor confiable"
-            title="crecemos junto a tu negocio"
+            icon={Music}
+            kicker="Nuestra esencia"
+            title="Transformamos sentimientos en experiencias memorables"
             align="left"
           />
 
-          {/* texto optimizado */}
-          <div className="mt-4 space-y-4 text-sm leading-relaxed text-slate-600 md:text-base">
-
+          <div className="brand-story-copy">
             <p>
-              En <strong className="text-slate-950">Wooly import Perú</strong>{" "}
-              abastecemos a mayoristas y emprendedores con insumos para regalos
-              que realmente se venden.
+              <strong>Gleemour</strong> es una marca de flores y regalos
+              emocionales inspirada en la música, creada para convertir
+              sentimientos en detalles que se viven, se sienten y se recuerdan.
             </p>
 
             <p>
-              Trabajamos con flores, globos, cajas, papel coreano, cintas y
-              accesorios pensados para crear productos llamativos y rentables.
+              Cada arreglo combina estética, significado y emoción para acompañar
+              momentos especiales, celebrar vínculos y decir aquello que a veces
+              las palabras no alcanzan.
             </p>
-
-            <p>
-              Ofrecemos variedad constante y precios por cajón para mejorar tu
-              margen y asegurar stock en tendencia.
-            </p>
-
-            <div className="flex items-start gap-3 text-sm text-slate-700">
-              <MapPin className="mt-1 h-5 w-5 text-[#1d8299]" />
-              <span>
-                Estamos en <strong>tacna</strong> y te ayudamos a elegir lo que
-                mejor se vende en tu tienda.
-              </span>
-            </div>
-
-            <p className="font-semibold text-slate-950">
-              Si buscas crecer con productos que sí rotan, wooly es tu mejor aliado.
+            
+            <p className="brand-story-highlight">
+              No vendemos solo flores: diseñamos mensajes emocionales con forma
+              de regalo.
             </p>
           </div>
 
-          {/* CTA PRO */}
-          <a
-            href="https://wa.me/51936188636?text=Hola,%20quiero%20información%20sobre%20Wooly%20Import"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center justify-center gap-3 rounded-full bg-[#25D366] px-8 py-4 text-sm font-black text-white shadow-[0_10px_25px_rgba(37,211,102,0.35)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#1ebe5d] hover:shadow-[0_15px_35px_rgba(37,211,102,0.5)] active:scale-95"
-          >
-            <WhatsAppIcon className="h-5 w-5" />
-            Escríbenos ahora
-          </a>
+          <div className="brand-story-emotions">
+            {emotionalCategories.map((category) => {
+              const Icon = category.icon;
+
+              return (
+                <div key={category.label} className="brand-story-emotion-item">
+                  <div className="brand-story-emotion-icon">
+                    <Icon size={17} strokeWidth={1.8} />
+                  </div>
+
+                  <div>
+                    <strong>{category.label}</strong>
+                    <span>{category.description}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
         </div>
       </div>

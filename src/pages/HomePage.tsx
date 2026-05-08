@@ -72,8 +72,10 @@ export default function HomePage() {
       <ShippingSection />
       <LocationSection />
       <BrandStorySection />
+      {/*
       <TestimonialsSection />
       <FinalCTASection />
+      */}
       <SocialSection />
       <HomeFooter />
 

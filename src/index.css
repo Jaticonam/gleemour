@@ -11,6 +11,9 @@
 @import "./styles/utilities.css";
 @import "./styles/animations.css";
 @import "./styles/hero.css";
+@import "./styles/home/categoriessection.css";
+@import "./styles/home/brandstorysection.css";
+
 
 @tailwind base;
 @tailwind components;
