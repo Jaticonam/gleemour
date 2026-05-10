@@ -1,20 +1,80 @@
 /* ===== INDEX.CSS ===== */
-/* Punto único de carga de estilos (no agregar clases aquí) */
+/* Punto único de carga de estilos */
 
 /* Fuentes */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-/* Módulos */
-@import "./styles/base.css";
-@import "./styles/productdetail.css";
-@import "./styles/components.css";
-@import "./styles/utilities.css";
-@import "./styles/animations.css";
-@import "./styles/hero.css";
-@import "./styles/home/categoriessection.css";
-@import "./styles/home/brandstorysection.css";
-
+/* =========================================================
+   TAILWIND
+========================================================= */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================================
+   BASE
+========================================================= */
+
+@import "./styles/base/base.css";
+@import "./styles/base/tokens.css";
+@import "./styles/base/animations.css";
+@import "./styles/base/utilities.css";
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+
+@import "./styles/layout/layout.css";
+@import "./styles/layout/navbar.css";
+@import "./styles/layout/topbar.css";
+@import "./styles/layout/footer.css";
+
+/* =========================================================
+   COMPONENTS
+========================================================= */
+
+@import "./styles/components/buttons.css";
+@import "./styles/components/cards.css";
+@import "./styles/components/badges.css";
+@import "./styles/components/forms.css";
+@import "./styles/components/modals.css";
+@import "./styles/components/notifications.css";
+@import "./styles/components/searchinput.css";
+@import "./styles/components/categoryfilter.css";
+@import "./styles/components/floatingbuttons.css";
+@import "./styles/components/cartsidebar.css";
+@import "./styles/components/addtocartmodal.css";
+@import "./styles/components/imagezoommodal.css";
+@import "./styles/components/productcard.css";
+@import "./styles/components/countdown.css";
+@import "./styles/components/recentactivity.css";
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+@import "./styles/sections/hero.css";
+@import "./styles/sections/categories.css";
+@import "./styles/sections/featuredproducts.css";
+@import "./styles/sections/testimonials.css";
+@import "./styles/sections/stats.css";
+@import "./styles/sections/benefits.css";
+@import "./styles/sections/corporate.css";
+@import "./styles/sections/brandstory.css";
+@import "./styles/sections/finalcta.css";
+@import "./styles/sections/howtobuy.css";
+@import "./styles/sections/location.css";
+@import "./styles/sections/shipping.css";
+@import "./styles/sections/social.css";
+@import "./styles/sections/vip.css";
+
+/* =========================================================
+   PAGES
+========================================================= */
+
+@import "./styles/pages/home.css";
+@import "./styles/pages/catalog.css";
+@import "./styles/pages/category.css";
+@import "./styles/pages/productdetail.css";
+@import "./styles/pages/notfound.css";
