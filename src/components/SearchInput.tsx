@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Search, X, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Search, Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BRAND_CONFIG } from "@/config/brand";
 import type { Product } from "@/types/product";
@@ -11,6 +11,8 @@ interface SearchInputProps {
   placeholder?: string;
 }
 
+const MAX_SUGGESTIONS = 6;
+
 export function SearchInput({
   value,
   onChange,
@@ -18,42 +20,58 @@ export function SearchInput({
   placeholder = BRAND_CONFIG.search.placeholder,
 }: SearchInputProps) {
   const navigate = useNavigate();
-  const [activeIndex, setActiveIndex] = useState(-1);
 
-  const hasValue = value.trim().length > 0;
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const term = value.trim();
+  const hasValue = term.length > 0;
 
   const suggestions = useMemo(() => {
-    const term = value.trim().toLowerCase();
-    if (!term) return [];
+    const searchTerm = term.toLowerCase();
+    if (!searchTerm) return [];
 
     return products
       .filter((p) => {
-        const title = p.title?.toLowerCase() ?? "";
-        const id = p.id?.toLowerCase() ?? "";
-        const category = p.category?.toLowerCase() ?? "";
-        const description = p.description?.toLowerCase() ?? "";
-        const occasion = p.occasion?.toLowerCase() ?? "";
-        const message = p.message?.toLowerCase() ?? "";
-        const highlight = p.highlight?.toLowerCase() ?? "";
+        const fields = [
+          p.title,
+          p.id,
+          p.category,
+          p.description,
+          p.occasion,
+          p.message,
+          p.highlight,
+        ];
 
-        return (
-          title.includes(term) ||
-          id.includes(term) ||
-          category.includes(term) ||
-          description.includes(term) ||
-          occasion.includes(term) ||
-          message.includes(term) ||
-          highlight.includes(term)
+        return fields.some((field) =>
+          String(field ?? "").toLowerCase().includes(searchTerm)
         );
       })
-      .slice(0, 6);
-  }, [value, products]);
+      .slice(0, MAX_SUGGESTIONS);
+  }, [term, products]);
+
+  const hasSuggestions = suggestions.length > 0;
+  const showSuggestions = isOpen && hasSuggestions;
+
+  const closeSuggestions = () => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+  };
+
+  const clearSearch = () => {
+    onChange("");
+    closeSuggestions();
+    inputRef.current?.focus();
+  };
 
   const goToProduct = (product: Product) => {
-    const currentSearch = value.trim();
+    const currentSearch = term;
 
     onChange("");
-    setActiveIndex(-1);
+    closeSuggestions();
 
     navigate(`/catalogo/producto.html?id=${product.id}&cat=${product.category}`, {
       state: {
@@ -63,59 +81,136 @@ export function SearchInput({
     });
   };
 
+  const goToCatalogSearch = () => {
+    if (!term) return;
+
+    closeSuggestions();
+
+    navigate("/catalogo", {
+      state: {
+        fromSearch: true,
+        searchQuery: term,
+      },
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
-      setActiveIndex(-1);
-      onChange("");
+      if (hasValue) {
+        clearSearch();
+      } else {
+        closeSuggestions();
+      }
       return;
     }
 
-    if (suggestions.length === 0) return;
-
     if (e.key === "ArrowDown") {
+      if (!hasSuggestions) return;
+
       e.preventDefault();
+      setIsOpen(true);
       setActiveIndex((prev) =>
         prev < suggestions.length - 1 ? prev + 1 : 0
       );
+      return;
     }
 
     if (e.key === "ArrowUp") {
+      if (!hasSuggestions) return;
+
       e.preventDefault();
+      setIsOpen(true);
       setActiveIndex((prev) =>
         prev > 0 ? prev - 1 : suggestions.length - 1
       );
+      return;
     }
 
-    if (e.key === "Enter" && activeIndex >= 0) {
-      e.preventDefault();
-      goToProduct(suggestions[activeIndex]);
+    if (e.key === "Enter") {
+      if (activeIndex >= 0 && suggestions[activeIndex]) {
+        e.preventDefault();
+        goToProduct(suggestions[activeIndex]);
+        return;
+      }
+
+      if (term) {
+        e.preventDefault();
+        goToCatalogSearch();
+      }
     }
   };
 
+  useEffect(() => {
+    setActiveIndex(-1);
+    setIsOpen(hasValue);
+  }, [hasValue, value]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!wrapRef.current) return;
+
+      if (!wrapRef.current.contains(event.target as Node)) {
+        closeSuggestions();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+
+      if (event.key === "/" && !isTyping) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => window.removeEventListener("keydown", handleGlobalShortcut);
+  }, []);
+
   return (
-    <div className="search-input-wrap">
+    <div ref={wrapRef} className="search-input-wrap">
       <div className="search-input-box">
         <Search className="search-input-icon" />
 
         <input
+          ref={inputRef}
           type="text"
           value={value}
+          onFocus={() => {
+            if (hasValue) setIsOpen(true);
+          }}
           onChange={(e) => {
             onChange(e.target.value);
+            setIsOpen(true);
             setActiveIndex(-1);
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="search-input-field"
+          role="combobox"
+          aria-expanded={showSuggestions}
+          aria-autocomplete="list"
+          aria-controls="search-suggestions"
+          aria-activedescendant={
+            activeIndex >= 0 ? `search-suggestion-${activeIndex}` : undefined
+          }
         />
+
+        <kbd className="search-input-shortcut">/</kbd>
 
         {hasValue && (
           <button
             type="button"
-            onClick={() => {
-              onChange("");
-              setActiveIndex(-1);
-            }}
+            onClick={clearSearch}
             className="search-input-clear"
             aria-label="Limpiar búsqueda"
           >
@@ -124,12 +219,19 @@ export function SearchInput({
         )}
       </div>
 
-      {suggestions.length > 0 && (
-        <div className="search-suggestions">
+      {showSuggestions && (
+        <div
+          id="search-suggestions"
+          className="search-suggestions"
+          role="listbox"
+        >
           {suggestions.map((p, index) => (
             <button
               key={p.id}
+              id={`search-suggestion-${index}`}
               type="button"
+              role="option"
+              aria-selected={activeIndex === index}
               onMouseEnter={() => setActiveIndex(index)}
               onClick={() => goToProduct(p)}
               className={[
@@ -145,12 +247,23 @@ export function SearchInput({
 
               <div>
                 <p>{p.title}</p>
-                <span>{p.category} · {p.id}</span>
+                <span>
+                  {p.category} · {p.id}
+                </span>
               </div>
 
               <Sparkles className="search-suggestion-action" />
             </button>
           ))}
+
+          <button
+            type="button"
+            className="search-suggestion-footer"
+            onClick={goToCatalogSearch}
+          >
+            <span>Ver todos los resultados</span>
+            <ArrowRight className="search-suggestion-footer-icon" />
+          </button>
         </div>
       )}
     </div>
