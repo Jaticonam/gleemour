@@ -295,7 +295,7 @@ export function SearchInput({
             setActiveIndex(-1);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={`${placeholder} · ${products.length} detalles disponibles`}
           className="search-input-field"
           role="combobox"
           aria-expanded={showSuggestions || showQuickSearches}

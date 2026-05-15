@@ -4,7 +4,7 @@
  */
 export const UI_CONFIG = {
   search: {
-    placeholder: "Busca por ocasión, detalle o emoción...",
+    placeholder: "Cual es la ocasión o emoción...",
   },
 
   floating: {
