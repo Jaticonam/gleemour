@@ -1,0 +1,104 @@
+/* ===== BADGES ===== */
+
+@layer components {
+
+  .price-tier-3,
+  .price-tier-12,
+  .price-tier-50,
+  .price-tier-100 {
+    @apply inline-flex items-center justify-center px-2.5 py-[4px] text-[12px] font-black leading-none shadow-[0_4px_10px_rgba(106,90,138,0.18)];
+    border-radius: 8px;
+  }
+
+  .price-tier-3 {
+    background-color: var(--w-highlight);
+    color: var(--w-heading);
+  }
+
+  .price-tier-12 {
+    background-color: var(--w-primary);
+    color: white;
+  }
+
+  .price-tier-50 {
+    background-color: var(--w-secondary);
+    color: white;
+  }
+
+  .price-tier-100 {
+    background-color: var(--w-primary-dark);
+    color: white;
+  }
+
+  .badge-offer {
+    background: linear-gradient(135deg, #e85d75, #d98aad);
+    color: #ffffff;
+  }
+
+  .badge-best-seller {
+    background: linear-gradient(135deg, #f9c95b, #eca4c2);
+    color: var(--w-heading);
+  }
+
+  .badge-new {
+    background: linear-gradient(
+      135deg,
+      var(--w-primary),
+      var(--w-secondary)
+    );
+    color: #ffffff;
+  }
+
+  .badge-preorder {
+    background: linear-gradient(
+      135deg,
+      var(--w-whatsapp),
+      var(--w-whatsapp-dark)
+    );
+    color: #ffffff;
+  }
+
+  .badge-special {
+    background: linear-gradient(
+      135deg,
+      var(--w-primary-dark),
+      var(--w-primary)
+    );
+    color: #ffffff;
+  }
+
+  .badge-last-units {
+    background: linear-gradient(135deg, #e85d75, #b8325f);
+    color: #ffffff;
+  }
+
+  .badge-premium {
+    background: linear-gradient(
+      135deg,
+      #2f2437,
+      var(--w-primary-dark)
+    );
+    color: #ffffff;
+  }
+
+  .badge-default {
+    background: rgba(47, 36, 55, 0.82);
+    color: #ffffff;
+  }
+
+  .badge-mothers-day {
+    background: linear-gradient(135deg, #e63946, #d7263d);
+    color: #ffffff;
+    box-shadow:
+      0 10px 24px rgba(230, 57, 70, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .badge-mothers-day::before {
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.22),
+      transparent
+    );
+  }
+}

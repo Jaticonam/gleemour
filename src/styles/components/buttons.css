@@ -1,0 +1,66 @@
+/* ===== BUTTONS ===== */
+
+@layer components {
+  .btn-shop-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    background-color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-pink);
+  }
+
+  .btn-shop-primary:hover {
+    background-color: var(--w-primary);
+  }
+
+  .btn-shop-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    color: var(--w-primary-dark);
+    border-color: var(--w-primary);
+    background-color: var(--w-primary-soft);
+  }
+
+  .btn-shop-secondary:hover {
+    color: white;
+    background-color: var(--w-primary-dark);
+    border-color: var(--w-primary-dark);
+  }
+
+  .btn-shop-whatsapp {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    background-color: var(--w-whatsapp);
+    box-shadow: var(--w-shadow-whatsapp);
+  }
+
+  .btn-shop-whatsapp:hover {
+    background-color: var(--w-whatsapp-dark);
+  }
+
+  .btn-shop-pink {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0;
+    background-color: var(--w-primary);
+    box-shadow: var(--w-shadow-pink);
+  }
+
+  .btn-shop-pink:hover {
+    background-color: var(--w-primary-dark);
+  }
+
+  .btn-w-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1;
+    background-color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-pink);
+  }
+
+  .btn-w-primary:hover {
+    background-color: var(--w-primary);
+  }
+
+  .btn-w-whatsapp {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all hover:-translate-y-1;
+    background-color: var(--w-whatsapp);
+    box-shadow: var(--w-shadow-whatsapp);
+  }
+
+  .btn-w-whatsapp:hover {
+    background-color: var(--w-whatsapp-dark);
+  }
+}

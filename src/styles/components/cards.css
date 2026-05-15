@@ -1,0 +1,45 @@
+/* ===== CARDS ===== */
+
+@layer components {
+
+  .card-home {
+    @apply rounded-[28px] bg-white;
+    border: 1px solid var(--w-border);
+    box-shadow: var(--w-shadow-soft);
+  }
+
+  .card-product {
+    @apply rounded-[24px] bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-xl;
+    border: 1px solid var(--w-border);
+    box-shadow: 0 8px 24px rgba(106, 90, 138, 0.10);
+  }
+
+  .card-product:hover {
+    border-color: rgba(236, 164, 194, 0.65);
+    box-shadow: var(--w-shadow-medium);
+  }
+
+  .card-shop {
+    @apply rounded-[26px] bg-white;
+    border: 1px solid var(--w-border);
+    box-shadow: var(--w-shadow-soft);
+  }
+
+  .card-w {
+    @apply card-home;
+  }
+
+  .glass-w {
+    @apply relative overflow-hidden rounded-[30px] bg-white/85 ring-1 ring-white/30 backdrop-blur-xl;
+
+    border: 1px solid rgba(255, 255, 255, 0.7);
+
+    box-shadow: 0 30px 90px rgba(106, 90, 138, 0.18);
+  }
+
+  .glass-w::before {
+    content: "";
+
+    @apply pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-transparent opacity-70;
+  }
+}
