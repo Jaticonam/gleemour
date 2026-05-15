@@ -32,6 +32,8 @@
 /* PAGES */
 @import "./styles/pages/catalog.css";
 @import "./styles/pages/productdetail.css";
+@import "./styles/pages/category.css";
+@import "./styles/pages/home.css";
 
 /* TAILWIND */
 @tailwind base;

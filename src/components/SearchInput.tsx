@@ -40,6 +40,37 @@ function getSearchVariants(value: string): string[] {
   return SEARCH_SYNONYMS[normalized] ?? [normalized];
 }
 
+function highlightMatch(text: string, query: string) {
+  const cleanQuery = query.trim();
+
+  if (!cleanQuery) return text;
+
+  const index = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .indexOf(
+      cleanQuery
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+    );
+
+  if (index === -1) return text;
+
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + cleanQuery.length);
+  const after = text.slice(index + cleanQuery.length);
+
+  return (
+    <>
+      {before}
+      <mark className="search-match">{match}</mark>
+      {after}
+    </>
+  );
+}
+
 export function SearchInput({
   value,
   onChange,
@@ -95,6 +126,7 @@ export function SearchInput({
   const hasSuggestions = suggestions.length > 0;
   const showSuggestions = isOpen && hasValue && hasSuggestions;
   const showQuickSearches = isOpen && !hasValue;
+  const showEmptyState = isOpen && hasValue && !hasSuggestions;
 
   const footerIndex = suggestions.length;
   const totalOptions = suggestions.length + 1;
@@ -307,6 +339,32 @@ export function SearchInput({
         </div>
       )}
 
+      {showEmptyState && (
+        <div className="search-empty-panel">
+          <div className="search-empty-icon">
+            <Search className="w-5 h-5" />
+          </div>
+
+          <div>
+            <p>No encontramos “{term}”</p>
+            <span>Prueba con una búsqueda más general o usa una sugerencia rápida.</span>
+          </div>
+
+          <div className="search-empty-actions">
+            {QUICK_SEARCHES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="search-empty-chip"
+                onClick={() => applyQuickSearch(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showSuggestions && (
         <div
           id="search-suggestions"
@@ -338,7 +396,7 @@ export function SearchInput({
               />
 
               <div>
-                <p>{p.title}</p>
+                <p>{highlightMatch(p.title, term)}</p>
                 <span>
                   {p.category} · {p.id}
                 </span>

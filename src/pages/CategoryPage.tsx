@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, SearchX } from "lucide-react";
+import { ArrowLeft, SearchX } from "lucide-react";
 
 import { BRAND_CONFIG } from "@/config/brand";
 import { useCart } from "@/hooks/use-cart";
@@ -18,6 +18,7 @@ import { RecentActivity } from "@/components/RecentActivity";
 import { ImageZoomModal } from "@/components/ImageZoomModal";
 import { AddToCartModal } from "@/components/AddToCartModal";
 import { CategorySkeleton } from "@/components/skeletons/CategorySkeleton";
+import { SearchInput } from "@/components/SearchInput";
 
 const CategoryPage = () => {
   const { id: paramCategoryId } = useParams<{ id: string }>();
@@ -181,14 +182,12 @@ const CategoryPage = () => {
             </div>
 
             <div className="category-page-search">
-              <Search className="category-page-search-icon" />
-
-              <input
-                type="text"
+              <SearchInput
                 value={categorySearch}
-                onChange={(event) => setCategorySearch(event.target.value)}
-                placeholder={`Busca algo para ${
-                  categoryInfo?.name?.toLowerCase() || "sorprender"
+                onChange={setCategorySearch}
+                products={categoryProducts}
+                placeholder={`Buscar en ${
+                  categoryInfo?.name ?? "la categoría"
                 }...`}
               />
 
