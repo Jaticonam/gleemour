@@ -14,32 +14,48 @@ export const searchProducts = (products: Product[], query: string) => {
 
   const term = normalize(rawTerm);
 
+  const SEARCH_SYNONYMS: Record<string, string[]> = {
+    natural: ["natural", "naturales"],
+    naturales: ["natural", "naturales"],
+
+    artificial: ["artificial", "artificiales"],
+    artificiales: ["artificial", "artificiales"],
+
+    corporativo: ["corporativo", "corporativos", "corporate"],
+    corporativos: ["corporativo", "corporativos", "corporate"],
+    corporate: ["corporativo", "corporativos", "corporate"],
+  };
+
+  const searchVariants = SEARCH_SYNONYMS[term] ?? [term];
+
   return products
     .map((p) => {
       const id = normalize(p.id);
       const title = normalize(p.title);
       const description = normalize(p.description);
       const category = normalize(p.category);
-      const badges = normalize(p.badges?.join(" "));
+
+      const badges = normalize(
+        Array.isArray(p.badges) ? p.badges.join(" ") : ""
+      );
+
+      const attributes = normalize(
+        Array.isArray(p.attributes) ? p.attributes.join(" ") : ""
+      );
 
       let score = 0;
 
-      // 🔥 PRIORIDAD ID
-      if (id === term) score += 1000;
-      else if (id.startsWith(term)) score += 700;
-      else if (term.length >= 3 && id.includes(term)) score += 500;
+      searchVariants.forEach((variant) => {
+        if (id === variant) score += 1000;
+        else if (id.startsWith(variant)) score += 700;
+        else if (variant.length >= 3 && id.includes(variant)) score += 500;
 
-      // 🧠 NOMBRE
-      if (title.includes(term)) score += 300;
-
-      // 📄 DESCRIPCIÓN
-      if (description.includes(term)) score += 180;
-
-      // 📦 CATEGORÍA
-      if (category.includes(term)) score += 100;
-
-      // 🏷 BADGES
-      if (badges.includes(term)) score += 80;
+        if (title.includes(variant)) score += 300;
+        if (attributes.includes(variant)) score += 250;
+        if (description.includes(variant)) score += 180;
+        if (category.includes(variant)) score += 100;
+        if (badges.includes(variant)) score += 80;
+      });
 
       return { product: p, score };
     })

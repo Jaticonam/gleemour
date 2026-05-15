@@ -13,6 +13,33 @@ interface SearchInputProps {
 
 const MAX_SUGGESTIONS = 6;
 
+const QUICK_SEARCHES = ["Naturales", "Artificiales", "Corporativo"];
+
+const SEARCH_SYNONYMS: Record<string, string[]> = {
+  natural: ["natural", "naturales"],
+  naturales: ["natural", "naturales"],
+
+  artificial: ["artificial", "artificiales"],
+  artificiales: ["artificial", "artificiales"],
+
+  corporativo: ["corporativo", "corporativos", "corporate"],
+  corporativos: ["corporativo", "corporativos", "corporate"],
+  corporate: ["corporativo", "corporativos", "corporate"],
+};
+
+function normalizeSearchText(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getSearchVariants(value: string): string[] {
+  const normalized = normalizeSearchText(value);
+  return SEARCH_SYNONYMS[normalized] ?? [normalized];
+}
+
 export function SearchInput({
   value,
   onChange,
@@ -31,11 +58,18 @@ export function SearchInput({
   const hasValue = term.length > 0;
 
   const suggestions = useMemo(() => {
-    const searchTerm = term.toLowerCase();
+    const searchTerm = normalizeSearchText(term);
+
     if (!searchTerm) return [];
+
+    const searchVariants = getSearchVariants(searchTerm);
 
     return products
       .filter((p) => {
+        const attributes = Array.isArray(p.attributes)
+          ? p.attributes.join(" ")
+          : "";
+
         const fields = [
           p.title,
           p.id,
@@ -44,17 +78,26 @@ export function SearchInput({
           p.occasion,
           p.message,
           p.highlight,
+          attributes,
         ];
 
-        return fields.some((field) =>
-          String(field ?? "").toLowerCase().includes(searchTerm)
-        );
+        return fields.some((field) => {
+          const normalizedField = normalizeSearchText(field);
+
+          return searchVariants.some((variant) =>
+            normalizedField.includes(variant)
+          );
+        });
       })
       .slice(0, MAX_SUGGESTIONS);
   }, [term, products]);
 
   const hasSuggestions = suggestions.length > 0;
-  const showSuggestions = isOpen && hasSuggestions;
+  const showSuggestions = isOpen && hasValue && hasSuggestions;
+  const showQuickSearches = isOpen && !hasValue;
+
+  const footerIndex = suggestions.length;
+  const totalOptions = suggestions.length + 1;
 
   const closeSuggestions = () => {
     setIsOpen(false);
@@ -94,6 +137,17 @@ export function SearchInput({
     });
   };
 
+  const applyQuickSearch = (item: string) => {
+    onChange(item);
+
+    setActiveIndex(-1);
+
+    setTimeout(() => {
+      setIsOpen(true);
+      inputRef.current?.focus();
+    }, 0);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       if (hasValue) {
@@ -101,6 +155,7 @@ export function SearchInput({
       } else {
         closeSuggestions();
       }
+
       return;
     }
 
@@ -109,9 +164,7 @@ export function SearchInput({
 
       e.preventDefault();
       setIsOpen(true);
-      setActiveIndex((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : 0
-      );
+      setActiveIndex((prev) => (prev < totalOptions - 1 ? prev + 1 : 0));
       return;
     }
 
@@ -120,30 +173,40 @@ export function SearchInput({
 
       e.preventDefault();
       setIsOpen(true);
-      setActiveIndex((prev) =>
-        prev > 0 ? prev - 1 : suggestions.length - 1
-      );
+      setActiveIndex((prev) => (prev > 0 ? prev - 1 : totalOptions - 1));
       return;
     }
 
     if (e.key === "Enter") {
-      if (activeIndex >= 0 && suggestions[activeIndex]) {
-        e.preventDefault();
+      e.preventDefault();
+
+      if (activeIndex >= 0 && activeIndex < suggestions.length) {
         goToProduct(suggestions[activeIndex]);
         return;
       }
 
-      if (term) {
-        e.preventDefault();
-        goToCatalogSearch();
-      }
+      closeSuggestions();
+
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+
+        const length = inputRef.current?.value.length ?? 0;
+        inputRef.current?.setSelectionRange(length, length);
+      });
+
+      goToCatalogSearch();
+
+      return;
     }
   };
 
   useEffect(() => {
     setActiveIndex(-1);
-    setIsOpen(hasValue);
-  }, [hasValue, value]);
+
+    if (hasValue) {
+      setIsOpen(true);
+    }
+  }, [value, hasValue]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -155,12 +218,16 @@ export function SearchInput({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
     const handleGlobalShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
+
       const isTyping =
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -169,11 +236,15 @@ export function SearchInput({
       if (event.key === "/" && !isTyping) {
         event.preventDefault();
         inputRef.current?.focus();
+        setIsOpen(true);
       }
     };
 
     window.addEventListener("keydown", handleGlobalShortcut);
-    return () => window.removeEventListener("keydown", handleGlobalShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleGlobalShortcut);
+    };
   }, []);
 
   return (
@@ -185,9 +256,7 @@ export function SearchInput({
           ref={inputRef}
           type="text"
           value={value}
-          onFocus={() => {
-            if (hasValue) setIsOpen(true);
-          }}
+          onFocus={() => setIsOpen(true)}
           onChange={(e) => {
             onChange(e.target.value);
             setIsOpen(true);
@@ -197,7 +266,7 @@ export function SearchInput({
           placeholder={placeholder}
           className="search-input-field"
           role="combobox"
-          aria-expanded={showSuggestions}
+          aria-expanded={showSuggestions || showQuickSearches}
           aria-autocomplete="list"
           aria-controls="search-suggestions"
           aria-activedescendant={
@@ -219,6 +288,25 @@ export function SearchInput({
         )}
       </div>
 
+      {showQuickSearches && (
+        <div className="search-quick-panel">
+          <span className="search-quick-title">Búsquedas rápidas</span>
+
+          <div className="search-quick-list">
+            {QUICK_SEARCHES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="search-quick-chip"
+                onClick={() => applyQuickSearch(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showSuggestions && (
         <div
           id="search-suggestions"
@@ -232,7 +320,11 @@ export function SearchInput({
               type="button"
               role="option"
               aria-selected={activeIndex === index}
-              onMouseEnter={() => setActiveIndex(index)}
+              onMouseEnter={() => {
+                if (activeIndex !== -1) {
+                  setActiveIndex(index);
+                }
+              }}
               onClick={() => goToProduct(p)}
               className={[
                 "search-suggestion-item",
@@ -258,8 +350,14 @@ export function SearchInput({
 
           <button
             type="button"
-            className="search-suggestion-footer"
+            onMouseEnter={() => setActiveIndex(footerIndex)}
             onClick={goToCatalogSearch}
+            className={[
+              "search-suggestion-footer",
+              activeIndex === footerIndex
+                ? "search-suggestion-footer-active"
+                : "",
+            ].join(" ")}
           >
             <span>Ver todos los resultados</span>
             <ArrowRight className="search-suggestion-footer-icon" />

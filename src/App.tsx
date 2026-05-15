@@ -1,47 +1,73 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
-import HomePage from "./pages/HomePage.tsx";
-import Index from "./pages/Index.tsx";
-import ProductDetail from "./pages/ProductDetail.tsx";
-import CategoryPage from "./pages/CategoryPage.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import HomePage from "@/pages/HomePage";
+import Index from "@/pages/Index";
+import CategoryPage from "@/pages/CategoryPage";
+import ProductDetail from "@/pages/ProductDetail";
+import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+/* =========================================================
+   GLOBAL SHORTCUTS
+========================================================= */
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+function AppShortcuts() {
+  const navigate = useNavigate();
 
-      <BrowserRouter
-        future={{
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Routes>
-          {/* Landing principal */}
-          <Route path="/" element={<HomePage />} />
+  useEffect(() => {
+    const handleBackNavigation = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
 
-          {/* Catálogo */}
-          <Route path="/catalogo" element={<Index />} />
-          <Route path="/catalogo/producto.html" element={<ProductDetail />} />
-          <Route path="/catalogo/categoria.html" element={<CategoryPage />} />
+      const isTyping =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
 
-          {/* Legacy routes */}
-          <Route path="/producto/:id" element={<ProductDetail />} />
-          <Route path="/categoria/:id" element={<CategoryPage />} />
+      if (event.key === "Backspace" && !isTyping) {
+        event.preventDefault();
+        navigate(-1);
+      }
+    };
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    window.addEventListener("keydown", handleBackNavigation);
 
-export default App;
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleBackNavigation
+      );
+    };
+  }, [navigate]);
+
+  return null;
+}
+
+/* =========================================================
+   APP
+========================================================= */
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShortcuts />
+
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+
+        <Route path="/catalogo" element={<Index />} />
+
+        <Route
+          path="/catalogo/categoria.html"
+          element={<CategoryPage />}
+        />
+
+        <Route
+          path="/catalogo/producto.html"
+          element={<ProductDetail />}
+        />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

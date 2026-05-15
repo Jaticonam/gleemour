@@ -1,6 +1,68 @@
 /* ===== SEARCH INPUT ===== */
 
 @layer components {
+  .search-quick-panel {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    left: 0;
+    right: 0;
+    z-index: 1200;
+    padding: 0.85rem;
+    border-radius: var(--w-radius-md);
+    border: 1px solid var(--w-border);
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(236, 164, 194, 0.1),
+        transparent 34%
+      ),
+      var(--w-surface);
+    box-shadow: var(--w-shadow-strong);
+    animation: searchSuggestionsIn 0.18s ease both;
+  }
+
+  .search-quick-title {
+    display: block;
+    margin-bottom: 0.65rem;
+    color: var(--w-muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .search-quick-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .search-quick-chip {
+    min-height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.8rem;
+    border-radius: var(--w-radius-full);
+    border: 1px solid rgba(236, 164, 194, 0.28);
+    background: var(--w-secondary-soft);
+    color: var(--w-secondary-strong);
+    font-size: 0.76rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition:
+      transform var(--w-transition-fast),
+      background var(--w-transition),
+      color var(--w-transition),
+      box-shadow var(--w-transition);
+  }
+
+  .search-quick-chip:hover {
+    transform: translateY(-2px);
+    background: var(--w-primary-soft);
+    color: var(--w-primary-dark);
+    box-shadow: var(--w-shadow-soft);
+  }
   .search-input-wrap {
     position: relative;
     width: 100%;
@@ -262,6 +324,11 @@
     transition:
       background var(--w-transition),
       color var(--w-transition);
+  }
+
+  .search-suggestion-footer-active {
+    background: var(--w-primary-soft);
+    color: var(--w-primary-dark);
   }
 
   .search-suggestion-footer:hover {
