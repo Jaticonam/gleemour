@@ -16,7 +16,6 @@ export function FloatingButtons({
 
   return (
     <div className="floating-buttons-wrap">
-
       {/* 🛒 Pedido */}
       <button
         onClick={onCartClick}
@@ -26,13 +25,14 @@ export function FloatingButtons({
         <span className="hidden sm:inline">
           {BRAND_CONFIG.floating.cartLabel}
         </span>
+
         {cartCount > 0 && (
           <strong className="floating-btn-count">{cartCount}</strong>
         )}
       </button>
 
-      {/* 📦 Catálogo */}
-      {!isHome && (
+      {/* 📦 Catálogo - solo Home */}
+      {isHome && (
         <a
           href="/catalogo"
           className="floating-btn floating-btn-catalog"

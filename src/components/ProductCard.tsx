@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   PlusCircle,
   CheckCircle,
@@ -24,7 +23,6 @@ import {
   isProductAvailable,
   getProductState,
   buildProductWhatsAppUrl,
-  getProductUrl,
   getLiveViewers,
 } from "@/lib/product";
 
@@ -41,13 +39,8 @@ export function ProductCard({
   onAddToCart,
   onImageClick,
 }: ProductCardProps) {
-
-  const navigate = useNavigate();
-
   const available = isProductAvailable(product);
-
   const productState = getProductState(product);
-
   const isPreventa = productState.type === "preorder";
 
   const showWhatsAppButton =
@@ -55,23 +48,14 @@ export function ProductCard({
     productState.type === "sold-out";
 
   const price = getProductPrice(product);
-
   const originalPrice = getOriginalProductPrice(product);
-
   const hasOffer = hasOfferPrice(product);
 
   const cartItem = cart.find((item) => item.id === product.id);
-
   const qtyInCart = cartItem?.qty ?? 0;
-
   const isInCart = qtyInCart > 0;
 
-  const [viewers, setViewers] = useState(
-    getLiveViewers()
-  );
-
-  const [zoomedProduct, setZoomedProduct] =
-  useState<Product | null>(null);
+  const [viewers, setViewers] = useState(getLiveViewers());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,14 +65,8 @@ export function ProductCard({
     return () => clearInterval(interval);
   }, []);
 
-  const goToDetail = () => {
-    // ProductDetail pausado temporalmente para vender directo desde la card.
-    return;
-  };
-
   const handleAdd = () => {
     if (!available || isPreventa) return;
-
     onAddToCart(product);
   };
 
@@ -102,39 +80,32 @@ export function ProductCard({
   };
 
   let StockIcon = CheckCircle;
-
-  let stockClass =
-    "product-card-status product-card-status-success";
+  let stockClass = "product-card-status product-card-status-success";
 
   switch (productState.type) {
     case "preorder":
       StockIcon = Clock;
-      stockClass =
-        "product-card-status product-card-status-preorder";
+      stockClass = "product-card-status product-card-status-preorder";
       break;
 
     case "sold-out":
       StockIcon = XCircle;
-      stockClass =
-        "product-card-status product-card-status-danger";
+      stockClass = "product-card-status product-card-status-danger";
       break;
 
     case "last-units":
       StockIcon = AlertTriangle;
-      stockClass =
-        "product-card-status product-card-status-danger";
+      stockClass = "product-card-status product-card-status-danger";
       break;
 
     case "limited":
       StockIcon = AlertTriangle;
-      stockClass =
-        "product-card-status product-card-status-warning";
+      stockClass = "product-card-status product-card-status-warning";
       break;
 
     case "unavailable":
       StockIcon = Clock;
-      stockClass =
-        "product-card-status product-card-status-muted";
+      stockClass = "product-card-status product-card-status-muted";
       break;
   }
 
@@ -148,11 +119,10 @@ export function ProductCard({
           src={product.img || "/placeholder.svg"}
           alt={product.title}
           loading="lazy"
-          className={`product-card-image ${
-            !available && !isPreventa
-              ? "product-card-image-disabled"
-              : ""
-          }`}
+          className={[
+            "product-card-image",
+            !available && !isPreventa ? "product-card-image-disabled" : "",
+          ].join(" ")}
         />
 
         <div className="product-card-image-overlay">
@@ -223,17 +193,9 @@ export function ProductCard({
           <span>{getCategoryName(product.category)}</span>
         </div>
 
-        <h3 onClick={goToDetail} className="product-card-title">
-          {product.title}
-        </h3>
+        <h3 className="product-card-title">{product.title}</h3>
 
-        <p className="product-card-description">
-          {product.description || getEmotionalHint(product)}
-        </p>
-
-        <p className="product-card-hint">
-          {getEmotionalHint(product)}
-        </p>
+        <p className="product-card-hint">{getEmotionalHint(product)}</p>
 
         <div className="product-card-price-block">
           {isPreventa ? (
@@ -242,9 +204,7 @@ export function ProductCard({
                 {PRODUCT_CARD_CONFIG.price.preorder}
               </span>
 
-              <small>
-                {PRODUCT_CARD_CONFIG.price.preorderHelp}
-              </small>
+              <small>{PRODUCT_CARD_CONFIG.price.preorderHelp}</small>
             </>
           ) : (
             <div className="product-card-price-wrap">
@@ -264,9 +224,7 @@ export function ProductCard({
                   {PRODUCT_CARD_CONFIG.price.offerText}
                 </small>
               ) : (
-                <small>
-                  {PRODUCT_CARD_CONFIG.price.defaultText}
-                </small>
+                <small>{PRODUCT_CARD_CONFIG.price.defaultText}</small>
               )}
             </div>
           )}
@@ -290,11 +248,7 @@ export function ProductCard({
 
         <div className="product-card-actions">
           <button
-            onClick={
-              showWhatsAppButton
-                ? handleWhatsApp
-                : handleAdd
-            }
+            onClick={showWhatsAppButton ? handleWhatsApp : handleAdd}
             disabled={!available && !showWhatsAppButton}
             className={[
               "product-card-button",
@@ -302,8 +256,8 @@ export function ProductCard({
               showWhatsAppButton
                 ? "product-card-button-whatsapp"
                 : available
-                ? "product-card-button-primary"
-                : "product-card-button-disabled",
+                  ? "product-card-button-primary"
+                  : "product-card-button-disabled",
             ].join(" ")}
           >
             {showWhatsAppButton ? (
@@ -344,67 +298,6 @@ export function ProductCard({
           )}
         </div>
       </div>
-
-      {zoomedProduct && (
-        <div
-          className="product-zoom-overlay"
-          onClick={() => setZoomedProduct(null)}
-        >
-          <div
-            className="product-zoom-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="product-zoom-close"
-              onClick={() => setZoomedProduct(null)}
-            >
-              ✕
-            </button>
-
-            <img
-              src={zoomedProduct.img || "/placeholder.svg"}
-              alt={zoomedProduct.title}
-              className="product-zoom-image"
-            />
-
-            <div className="product-zoom-footer">
-              <h3>{zoomedProduct.title}</h3>
-
-              <div className="product-zoom-actions">
-                <button
-                  className="product-zoom-primary"
-                  onClick={() => {
-                    setZoomedProduct(null);
-                    onAddToCart(zoomedProduct);
-                  }}
-                >
-                  Agregar pedido
-                </button>
-
-                <button
-                  className="product-zoom-secondary"
-                  onClick={() => {
-                    setZoomedProduct(null);
-
-                    const url = buildProductWhatsAppUrl({
-                      product: zoomedProduct,
-                      qty: 1,
-                    });
-
-                    window.open(
-                      url,
-                      "_blank",
-                      "noopener,noreferrer"
-                    );
-                  }}
-                >
-                  Consultar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </article>
   );
 }

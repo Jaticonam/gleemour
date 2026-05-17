@@ -18,7 +18,7 @@ export const PRODUCT_CARD_CONFIG = {
   price: {
     preorder: "Consultar",
     preorderHelp: "Te orientamos por WhatsApp",
-    offerText: "Oferta especial disponible",
+    offerText: "Inspiración de temporada",
     defaultText: "Precio del detalle",
   },
 
